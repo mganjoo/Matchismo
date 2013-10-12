@@ -434,6 +434,35 @@
     </scenes>
     <resources>
         <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
+        <image name="CardBack" width="64" height="96"/>
     </resources>
     <color key="tintColor" red="0.26363364312940868" green="0.95481826716738194" blue="0.40711430483038041" alpha="1" colorSpace="calibratedRGB"/>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">

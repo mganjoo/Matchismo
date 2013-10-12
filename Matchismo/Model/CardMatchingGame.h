@@ -19,7 +19,7 @@ typedef enum {
     NoOutcome,
     MismatchOutcome,
     MatchOutcome
-} LastChoiceOutcome;
+} ChoiceOutcome;
 
 @interface CardMatchingGame : NSObject
 
@@ -35,7 +35,7 @@ typedef enum {
 
 // Properties associated with the last card choice
 @property (nonatomic, strong, readonly) NSArray *lastFaceUpCards;
-@property (nonatomic, readonly) LastChoiceOutcome lastChoiceOutcome;
+@property (nonatomic, readonly) ChoiceOutcome lastChoiceOutcome;
 @property (nonatomic, readonly) int lastScoreChange;
 
 @end

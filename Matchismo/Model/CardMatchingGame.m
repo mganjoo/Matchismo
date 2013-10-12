@@ -13,7 +13,7 @@
 @property (nonatomic, readwrite) NSInteger score;
 @property (nonatomic, strong) NSMutableArray *cards; // of Card
 @property (nonatomic, strong, readwrite) NSArray *lastFaceUpCards;
-@property (nonatomic, readwrite) LastChoiceOutcome lastChoiceOutcome;
+@property (nonatomic, readwrite) ChoiceOutcome lastChoiceOutcome;
 @property (nonatomic, readwrite) int lastScoreChange;
 
 @end
