@@ -377,28 +377,25 @@
                                     <action selector="touchCardButton:" destination="vXZ-lx-hvc" eventType="touchUpInside" id="rRu-il-8U2"/>
                                 </connections>
                             </button>
-                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="VOl-m7-sg8">
-                                <rect key="frame" x="251" y="24" width="51" height="31"/>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="Hv9-O2-jvC">
+                                <rect key="frame" x="191" y="26" width="109" height="29"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <segments>
+                                    <segment title="2-card"/>
+                                    <segment title="3-card"/>
+                                </segments>
                                 <connections>
-                                    <action selector="toggleThreeCardModeSwitch:" destination="vXZ-lx-hvc" eventType="valueChanged" id="A3n-rv-R38"/>
+                                    <action selector="changeGameTypeControlSelection:" destination="vXZ-lx-hvc" eventType="valueChanged" id="Ig8-Xu-iQ5"/>
                                 </connections>
-                            </switch>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="3-card mode" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fxm-iQ-Jlo">
-                                <rect key="frame" x="145" y="29" width="98" height="21"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <nil key="highlightedColor"/>
-                            </label>
+                            </segmentedControl>
                         </subviews>
                         <color key="backgroundColor" red="0.0" green="0.50196081399917603" blue="0.25098040699958801" alpha="1" colorSpace="calibratedRGB"/>
                     </view>
                     <connections>
+                        <outlet property="gameTypeControl" destination="Hv9-O2-jvC" id="mbI-My-Vgs"/>
                         <outlet property="lastChoiceOutcomeLabel" destination="cSo-cq-mFh" id="pQr-XU-07Z"/>
                         <outlet property="previousOutcomesSlider" destination="c9R-7M-XrX" id="dpM-fX-LqC"/>
                         <outlet property="scoreLabel" destination="x7B-sX-ZYi" id="7S4-VX-Rqe"/>
-                        <outlet property="threeCardModeSwitch" destination="VOl-m7-sg8" id="E1r-O6-ysk"/>
                         <outletCollection property="cardButtons" destination="fZh-Iv-eAl" id="62d-yf-wEh"/>
                         <outletCollection property="cardButtons" destination="HQR-UX-4sT" id="iRr-fo-y3H"/>
                         <outletCollection property="cardButtons" destination="Kdd-Cd-aYg" id="jrv-Qf-Mvj"/>

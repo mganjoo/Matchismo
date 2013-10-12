@@ -11,9 +11,14 @@
 #import "Deck.h"
 
 typedef enum {
-    NoOutcome = 0,
-    MismatchOutcome = 1,
-    MatchOutcome = 2
+    TwoCardGameType,
+    ThreeCardGameType
+} CardGameType;
+
+typedef enum {
+    NoOutcome,
+    MismatchOutcome,
+    MatchOutcome
 } LastChoiceOutcome;
 
 @interface CardMatchingGame : NSObject
@@ -21,11 +26,11 @@ typedef enum {
 // designated initializer
 - (instancetype)initWithCardCount:(NSUInteger)count
                         usingDeck:(Deck *)deck
-                    threeCardMode:(BOOL)threeCardMode;
+                         gameType:(CardGameType)gameType;
 - (void)chooseCardAtIndex:(NSUInteger)index;
 - (Card *)cardAtIndex:(NSUInteger)index;
 
-@property (nonatomic) BOOL threeCardMode;
+@property (nonatomic) CardGameType gameType;
 @property (nonatomic, readonly) NSInteger score;
 
 // Properties associated with the last card choice

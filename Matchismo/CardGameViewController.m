@@ -17,8 +17,8 @@
 @property (strong, nonatomic) IBOutletCollection(UIButton) NSArray *cardButtons;
 @property (weak, nonatomic) IBOutlet UILabel *scoreLabel;
 @property (weak, nonatomic) IBOutlet UILabel *lastChoiceOutcomeLabel;
-@property (weak, nonatomic) IBOutlet UISwitch *threeCardModeSwitch;
 @property (weak, nonatomic) IBOutlet UISlider *previousOutcomesSlider;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *gameTypeControl;
 
 @end
 
@@ -29,7 +29,7 @@
     if (!_game) {
         _game = [[CardMatchingGame alloc] initWithCardCount:[[self cardButtons] count]
                                                   usingDeck:[self createDeck]
-                                              threeCardMode:self.threeCardModeSwitch.on];
+                                                   gameType:[self gameTypeControl].selectedSegmentIndex];
     }
     return _game;
 }
@@ -57,7 +57,7 @@
 }
 
 - (IBAction)touchCardButton:(UIButton *)sender {
-    self.threeCardModeSwitch.enabled = NO;
+    self.gameTypeControl.enabled = NO;
     int chosenButtonIndex = [self.cardButtons indexOfObject:sender];
     [self.game chooseCardAtIndex:chosenButtonIndex];
 
@@ -83,12 +83,12 @@
 - (IBAction)touchRedealButton:(UIButton *)sender {
     self.game = nil;
     self.previousOutcomes = nil;
-    self.threeCardModeSwitch.enabled = YES;
+    self.gameTypeControl.enabled = YES;
     [self updateUI];
 }
 
-- (IBAction)toggleThreeCardModeSwitch:(UISwitch *)sender {
-    self.game.threeCardMode = sender.on;
+- (IBAction)changeGameTypeControlSelection:(UISegmentedControl *)sender {
+    self.game.gameType = sender.selectedSegmentIndex;
 }
 
 - (IBAction)adjustPreviousOutcomesSlider:(UISlider *)sender {

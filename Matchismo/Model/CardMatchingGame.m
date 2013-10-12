@@ -29,7 +29,7 @@
 // designated initializer
 - (instancetype)initWithCardCount:(NSUInteger)count
                         usingDeck:(Deck *)deck
-                    threeCardMode:(BOOL)threeCardMode
+                         gameType:(CardGameType)gameType
 {
     self = [super init];
     
@@ -43,7 +43,7 @@
                 break;
             }
         }
-        self.threeCardMode = threeCardMode;
+        self.gameType = gameType;
     }
     
     return self;
@@ -88,8 +88,8 @@ static const int COST_TO_CHOOSE = 1;
             }
             
             int matchScore = [card match:faceUpCards];
-            if ((!self.threeCardMode && [faceUpCards count] == 1) ||
-                 (self.threeCardMode && [faceUpCards count] == 2)) {
+            if ((self.gameType == TwoCardGameType && [faceUpCards count] == 1) ||
+                (self.gameType == ThreeCardGameType && [faceUpCards count] == 2)) {
 
                 if (matchScore > 0) {
                     self.lastScoreChange = matchScore * MATCH_BONUS;
