@@ -24,37 +24,44 @@ static const int THREE_CARD_RANK_MATCH = 6;
     int score = 0;
     
     if ([otherCards count] == 1) {
-        PlayingCard *otherCard = [otherCards firstObject];
-        if (otherCard.rank == self.rank) {
-            score = TWO_CARD_RANK_MATCH;
-        } else if ([otherCard.suit isEqualToString:self.suit]) {
-            score = TWO_CARD_SUIT_MATCH;
+        id otherCard = [otherCards firstObject];
+        if ([otherCard isKindOfClass:[PlayingCard class]]) {
+            PlayingCard *otherPlayingCard = (PlayingCard *)otherCard;
+            if (otherPlayingCard.rank == self.rank) {
+                score = TWO_CARD_RANK_MATCH;
+            } else if ([otherPlayingCard.suit isEqualToString:self.suit]) {
+                score = TWO_CARD_SUIT_MATCH;
+            }
         }
     } else if ([otherCards count] == 2) {
-        PlayingCard *firstCard = otherCards[0];
-        PlayingCard *secondCard = otherCards[1];
-        
-        int numSuitMatches = [self suitMatchesWith:firstCard] +
-                             [self suitMatchesWith:secondCard] +
-                             [firstCard suitMatchesWith:secondCard];
-        int numRankMatches = [self rankMatchesWith:firstCard] +
-                             [self rankMatchesWith:secondCard] +
-                             [firstCard rankMatchesWith:secondCard];
-        
-        if (numSuitMatches == 3) {
-            score = THREE_CARD_SUIT_MATCH;
-        } else if (numRankMatches == 3) {
-            score = THREE_CARD_RANK_MATCH;
-        } else if (numSuitMatches == 1) {
-            if (numRankMatches == 1) {
-                score = THREE_CARD_PARTIAL_RANK_AND_SUIT_MATCH;
-            } else {
-                score = THREE_CARD_PARTIAL_SUIT_MATCH;
+        id firstCard = otherCards[0];
+        id secondCard = otherCards[1];
+        if ([firstCard isKindOfClass:[PlayingCard class]] &&
+            [secondCard isKindOfClass:[PlayingCard class]]) {
+            
+            PlayingCard *firstPlayingCard = (PlayingCard *)firstCard;
+            PlayingCard *secondPlayingCard = (PlayingCard *)secondCard;
+            int numSuitMatches = [self suitMatchesWith:firstPlayingCard] +
+                                 [self suitMatchesWith:secondPlayingCard] +
+                                 [firstPlayingCard suitMatchesWith:secondPlayingCard];
+            int numRankMatches = [self rankMatchesWith:firstPlayingCard] +
+                                 [self rankMatchesWith:secondPlayingCard] +
+                                 [firstPlayingCard rankMatchesWith:secondPlayingCard];
+            
+            if (numSuitMatches == 3) {
+                score = THREE_CARD_SUIT_MATCH;
+            } else if (numRankMatches == 3) {
+                score = THREE_CARD_RANK_MATCH;
+            } else if (numSuitMatches == 1) {
+                if (numRankMatches == 1) {
+                    score = THREE_CARD_PARTIAL_RANK_AND_SUIT_MATCH;
+                } else {
+                    score = THREE_CARD_PARTIAL_SUIT_MATCH;
+                }
+            } else if (numRankMatches == 1) {
+                score = THREE_CARD_PARTIAL_RANK_MATCH;
             }
-        } else if (numRankMatches == 1) {
-            score = THREE_CARD_PARTIAL_RANK_MATCH;
         }
-        
     }
     
     return score;

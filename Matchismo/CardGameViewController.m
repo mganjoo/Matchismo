@@ -97,7 +97,6 @@
         self.lastChoiceOutcomeLabel.text = self.previousOutcomes[index];
         self.lastChoiceOutcomeLabel.alpha = index < [self.previousOutcomes count] - 1 ? 0.6 : 1;
     }
-
 }
 
 - (void)updateUI
