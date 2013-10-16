@@ -12,6 +12,7 @@
 
 @property (nonatomic, readwrite) NSInteger score;
 @property (nonatomic, strong) NSMutableArray *cards; // of Card
+@property (nonatomic) NSUInteger numberOfCardsInChoice;
 @property (nonatomic, strong, readwrite) NSArray *lastFaceUpCards;
 @property (nonatomic, readwrite) ChoiceOutcome lastChoiceOutcome;
 @property (nonatomic, readwrite) int lastScoreChange;
@@ -29,7 +30,7 @@
 // designated initializer
 - (instancetype)initWithCardCount:(NSUInteger)count
                         usingDeck:(Deck *)deck
-                         gameType:(CardGameType)gameType
+              numberOfCardsInChoice:(NSUInteger)numberOfCardsInChoice
 {
     self = [super init];
     
@@ -43,7 +44,7 @@
                 break;
             }
         }
-        self.gameType = gameType;
+        self.numberOfCardsInChoice = numberOfCardsInChoice;
     }
     
     return self;
@@ -88,9 +89,7 @@ static const int COST_TO_CHOOSE = 1;
             }
             
             int matchScore = [card match:faceUpCards];
-            if ((self.gameType == TwoCardGameType && [faceUpCards count] == 1) ||
-                (self.gameType == ThreeCardGameType && [faceUpCards count] == 2)) {
-
+            if ([faceUpCards count] == self.numberOfCardsInChoice - 1) {
                 if (matchScore > 0) {
                     self.lastScoreChange = matchScore * MATCH_BONUS;
                     self.score += self.lastScoreChange;

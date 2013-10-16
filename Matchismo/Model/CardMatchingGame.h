@@ -10,27 +10,21 @@
 #import "Card.h"
 #import "Deck.h"
 
-typedef enum {
-    TwoCardGameType,
-    ThreeCardGameType
-} CardGameType;
-
-typedef enum {
+typedef NS_ENUM (NSUInteger, ChoiceOutcome) {
     NoOutcome,
     MismatchOutcome,
     MatchOutcome
-} ChoiceOutcome;
+};
 
 @interface CardMatchingGame : NSObject
 
 // designated initializer
 - (instancetype)initWithCardCount:(NSUInteger)count
                         usingDeck:(Deck *)deck
-                         gameType:(CardGameType)gameType;
+              numberOfCardsInChoice:(NSUInteger)numberOfCardsInChoice;
 - (void)chooseCardAtIndex:(NSUInteger)index;
 - (Card *)cardAtIndex:(NSUInteger)index;
 
-@property (nonatomic) CardGameType gameType;
 @property (nonatomic, readonly) NSInteger score;
 
 // Properties associated with the last card choice

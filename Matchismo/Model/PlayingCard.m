@@ -12,67 +12,24 @@
 
 // Score constants for various match difficulties
 static const int TWO_CARD_SUIT_MATCH = 2;
-static const int TWO_CARD_RANK_MATCH = 4;
-static const int THREE_CARD_PARTIAL_SUIT_MATCH = 1;
-static const int THREE_CARD_SUIT_MATCH = 3;
-static const int THREE_CARD_PARTIAL_RANK_MATCH = 4;
-static const int THREE_CARD_PARTIAL_RANK_AND_SUIT_MATCH = 5;
-static const int THREE_CARD_RANK_MATCH = 6;
+static const int TWO_CARD_RANK_MATCH = 5;
 
 - (int)match:(NSArray *)otherCards
 {
     int score = 0;
     
-    if ([otherCards count] == 1) {
-        id otherCard = [otherCards firstObject];
-        if ([otherCard isKindOfClass:[PlayingCard class]]) {
-            PlayingCard *otherPlayingCard = (PlayingCard *)otherCard;
-            if (otherPlayingCard.rank == self.rank) {
-                score = TWO_CARD_RANK_MATCH;
-            } else if ([otherPlayingCard.suit isEqualToString:self.suit]) {
-                score = TWO_CARD_SUIT_MATCH;
-            }
-        }
-    } else if ([otherCards count] == 2) {
-        id firstCard = otherCards[0];
-        id secondCard = otherCards[1];
-        if ([firstCard isKindOfClass:[PlayingCard class]] &&
-            [secondCard isKindOfClass:[PlayingCard class]]) {
-            
-            PlayingCard *firstPlayingCard = (PlayingCard *)firstCard;
-            PlayingCard *secondPlayingCard = (PlayingCard *)secondCard;
-            int numSuitMatches = [self suitMatchesWith:firstPlayingCard] +
-                                 [self suitMatchesWith:secondPlayingCard] +
-                                 [firstPlayingCard suitMatchesWith:secondPlayingCard];
-            int numRankMatches = [self rankMatchesWith:firstPlayingCard] +
-                                 [self rankMatchesWith:secondPlayingCard] +
-                                 [firstPlayingCard rankMatchesWith:secondPlayingCard];
-            
-            if (numSuitMatches == 3) {
-                score = THREE_CARD_SUIT_MATCH;
-            } else if (numRankMatches == 3) {
-                score = THREE_CARD_RANK_MATCH;
-            } else if (numSuitMatches == 1) {
-                if (numRankMatches == 1) {
-                    score = THREE_CARD_PARTIAL_RANK_AND_SUIT_MATCH;
-                } else {
-                    score = THREE_CARD_PARTIAL_SUIT_MATCH;
-                }
-            } else if (numRankMatches == 1) {
-                score = THREE_CARD_PARTIAL_RANK_MATCH;
-            }
+    if ([otherCards count] == 1 &&
+        [otherCards[0] isKindOfClass:[PlayingCard class]]) {
+        
+        PlayingCard *otherCard = (PlayingCard *)otherCards[0];
+        if (otherCard.rank == self.rank) {
+            score = TWO_CARD_RANK_MATCH;
+        } else if ([otherCard.suit isEqualToString:self.suit]) {
+            score = TWO_CARD_SUIT_MATCH;
         }
     }
     
     return score;
-}
-
-- (BOOL)suitMatchesWith:(PlayingCard *)otherCard {
-    return [otherCard.suit isEqualToString:self.suit];
-}
-
-- (BOOL)rankMatchesWith:(PlayingCard *)otherCard {
-    return otherCard.rank == self.rank;
 }
 
 - (NSString *)contents
@@ -82,16 +39,10 @@ static const int THREE_CARD_RANK_MATCH = 6;
 
 @synthesize suit = _suit;
 
-+ (NSArray *)validSuits
-{
-    return @[@"♠", @"♣", @"♥", @"♦"];
-}
-
 - (void)setSuit:(NSString *)suit
 {
-    if ([[PlayingCard validSuits] containsObject:suit]) {
+    if ([[PlayingCard validSuits] containsObject:suit])
         _suit = suit;
-    }
 }
 
 - (NSString *)suit
@@ -99,10 +50,15 @@ static const int THREE_CARD_RANK_MATCH = 6;
     return _suit ? _suit : @"?";
 }
 
-+ (NSArray *)rankStrings
+- (void)setRank:(NSUInteger)rank
 {
-    return @[@"?", @"A", @"2", @"3", @"4", @"5", @"6",
-             @"7", @"8", @"9", @"10", @"J", @"Q", @"K"];
+    if (rank <= [PlayingCard maxRank])
+        _rank = rank;
+}
+
++ (NSArray *)validSuits
+{
+    return @[@"♠", @"♣", @"♥", @"♦"];
 }
 
 + (NSUInteger)maxRank
@@ -110,11 +66,10 @@ static const int THREE_CARD_RANK_MATCH = 6;
     return [[self rankStrings] count] - 1;
 }
 
-- (void)setRank:(NSUInteger)rank
++ (NSArray *)rankStrings
 {
-    if (rank <= [PlayingCard maxRank]) {
-        _rank = rank;
-    }
+    return @[@"?", @"A", @"2", @"3", @"4", @"5", @"6",
+             @"7", @"8", @"9", @"10", @"J", @"Q", @"K"];
 }
 
 @end

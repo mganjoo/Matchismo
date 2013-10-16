@@ -1,13 +1,13 @@
 //
-//  PlayingCardDeck.h
+//  SetCardDeck.h
 //  Matchismo
 //
-//  Created by Milind Ganjoo on 9/28/13.
+//  Created by Milind Ganjoo on 10/13/13.
 //  Copyright (c) 2013 Stanford University. All rights reserved.
 //
 
 #import "Deck.h"
 
-@interface PlayingCardDeck : Deck
+@interface SetCardDeck : Deck
 
 @end

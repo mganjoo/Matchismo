@@ -7,31 +7,111 @@
 //
 
 #import "CardGameViewController.h"
-#import "PlayingCardDeck.h"
 #import "CardMatchingGame.h"
+#import "HistoryViewController.h"
 
 @interface CardGameViewController ()
 
 @property (strong, nonatomic) CardMatchingGame *game;
-@property (strong, nonatomic) NSMutableArray *previousOutcomes; // of NSString
+@property (strong, nonatomic) NSAttributedString *lastOutcome;
+@property (strong, nonatomic) NSMutableArray *previousOutcomes; // of NSAttributedString
+
+// UI elements
 @property (strong, nonatomic) IBOutletCollection(UIButton) NSArray *cardButtons;
 @property (weak, nonatomic) IBOutlet UILabel *scoreLabel;
 @property (weak, nonatomic) IBOutlet UILabel *lastChoiceOutcomeLabel;
-@property (weak, nonatomic) IBOutlet UISlider *previousOutcomesSlider;
-@property (weak, nonatomic) IBOutlet UISegmentedControl *gameTypeControl;
 
 @end
 
 @implementation CardGameViewController
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [self updateUI];
+}
 
 - (CardMatchingGame *)game
 {
     if (!_game) {
         _game = [[CardMatchingGame alloc] initWithCardCount:[[self cardButtons] count]
                                                   usingDeck:[self createDeck]
-                                                   gameType:[self gameTypeControl].selectedSegmentIndex];
+                                      numberOfCardsInChoice:[self numberOfCardsInChoice]];
     }
     return _game;
+}
+
+// Abstract method (must be overridden)
+- (Deck *)createDeck
+{
+    return nil;
+}
+
+// Default implementation (could be overridden)
+- (NSString *)faceUpBackgroundImageNameForCard:(Card *)card
+{
+    return @"CardFront";
+}
+
+// Default implementation (could be overridden)
+- (NSString *)faceDownBackgroundImageNameForCard:(Card *)card
+{
+    return @"CardBack";
+}
+
+// We use a 2-card game by default (could be overridden)
+- (NSUInteger)numberOfCardsInChoice
+{
+    return 2;
+}
+
+// Default implementation simply prints card contents (could be overridden)
+- (NSAttributedString *)faceUpTitleForCard:(Card *)card
+{
+    return [[NSAttributedString alloc] initWithString: card.contents];
+}
+
+// Default implementation simply prints nothing (could be overridden)
+- (NSAttributedString *)faceDownTitleForCard:(Card *)card
+{
+    return [[NSAttributedString alloc] initWithString: @""];
+}
+
+- (NSAttributedString *)titleForCard:(Card *)card
+{
+    return card.isChosen ? [self faceUpTitleForCard:card] : [self faceDownTitleForCard:card];
+}
+
+- (UIImage *)backgroundImageForCard:(Card *)card
+{
+    return [UIImage imageNamed:card.isChosen ? [self faceUpBackgroundImageNameForCard:card] : [self faceDownBackgroundImageNameForCard:card]];
+}
+
+- (IBAction)touchCardButton:(UIButton *)sender {
+    int chosenButtonIndex = [self.cardButtons indexOfObject:sender];
+    [self.game chooseCardAtIndex:chosenButtonIndex];
+    [self saveLastOutcome];
+    [self updateUI];
+}
+
+- (IBAction)touchRedealButton:(UIButton *)sender {
+    self.game = nil;
+    self.previousOutcomes = nil;
+    [self updateUI];
+}
+
+- (void)updateUI
+{
+    for (UIButton *cardButton in self.cardButtons) {
+        int cardButtonIndex = [self.cardButtons indexOfObject:cardButton];
+        Card *card = [self.game cardAtIndex:cardButtonIndex];
+        [cardButton setAttributedTitle:[self titleForCard:card] forState:UIControlStateNormal];
+        [cardButton setBackgroundImage:[self backgroundImageForCard:card] forState:UIControlStateNormal];
+        cardButton.enabled = !card.isMatched;
+        self.scoreLabel.text = [NSString stringWithFormat:@"Score: %d", self.game.score];
+    }
+    
+    self.lastChoiceOutcomeLabel.attributedText = self.lastOutcome;
+    self.lastChoiceOutcomeLabel.alpha = 1;
 }
 
 - (NSMutableArray *)previousOutcomes
@@ -40,92 +120,50 @@
     return _previousOutcomes;
 }
 
-- (void)addPreviousOutcome:(NSString *)outcome
+- (void)saveLastOutcome
 {
-    // If the last outcome was blank, replace it
-    // (we don't care about blank outcomes except the most recent one)
-    if ([[self.previousOutcomes lastObject] isEqualToString:@""]) {
-        [self.previousOutcomes setObject:outcome atIndexedSubscript:([self.previousOutcomes count] - 1)];
-    } else {
-        [self.previousOutcomes addObject:outcome];
-    }
-}
-
-- (Deck *)createDeck
-{
-    return [[PlayingCardDeck alloc] init];
-}
-
-- (IBAction)touchCardButton:(UIButton *)sender {
-    self.gameTypeControl.enabled = NO;
-    int chosenButtonIndex = [self.cardButtons indexOfObject:sender];
-    [self.game chooseCardAtIndex:chosenButtonIndex];
-
-    // Generate string for outcome
-    // Note: to use componentsJoinedByString, I added a 'description' method to Card,
-    // which simply returns the result of the 'contents' method.
-    NSString *faceUpCardsString = [self.game.lastFaceUpCards componentsJoinedByString:@" "];
-    NSString *outcome = @"";
+    // Generate string for outcome, with placeholder for card titles
+    NSString *outcomeString;
     if (self.game.lastChoiceOutcome == NoOutcome) {
-        outcome = faceUpCardsString;
+        outcomeString = @"[CARDS]";
     } else if (self.game.lastChoiceOutcome == MatchOutcome) {
-        outcome = [NSString stringWithFormat:@"Matched %@ for %d points.",
-                   faceUpCardsString, self.game.lastScoreChange];
+        outcomeString = [NSString stringWithFormat:@"Matched [CARDS] for %d points.", self.game.lastScoreChange];
     } else if (self.game.lastChoiceOutcome == MismatchOutcome) {
-        outcome = [NSString stringWithFormat:@"%@ don't match! %d point penalty.",
-                   faceUpCardsString, self.game.lastScoreChange];
+        outcomeString = [NSString stringWithFormat:@"[CARDS] don't match! %d point penalty.", self.game.lastScoreChange];
     }
-    [self addPreviousOutcome:outcome];
-
-    [self updateUI];
-}
-
-- (IBAction)touchRedealButton:(UIButton *)sender {
-    self.game = nil;
-    self.previousOutcomes = nil;
-    self.gameTypeControl.enabled = YES;
-    [self updateUI];
-}
-
-- (IBAction)changeGameTypeControlSelection:(UISegmentedControl *)sender {
-    self.game.gameType = sender.selectedSegmentIndex;
-}
-
-- (IBAction)adjustPreviousOutcomesSlider:(UISlider *)sender {
-    NSUInteger index = round(sender.value);
-    if (index < [self.previousOutcomes count]) {
-        self.lastChoiceOutcomeLabel.text = self.previousOutcomes[index];
-        self.lastChoiceOutcomeLabel.alpha = index < [self.previousOutcomes count] - 1 ? 0.6 : 1;
-    }
-}
-
-- (void)updateUI
-{
-    for (UIButton *cardButton in self.cardButtons) {
-        int cardButtonIndex = [self.cardButtons indexOfObject:cardButton];
-        Card *card = [self.game cardAtIndex:cardButtonIndex];
-        [cardButton setTitle:[self titleForCard:card] forState:UIControlStateNormal];
-        [cardButton setBackgroundImage:[self backgroundImageForCard:card] forState:UIControlStateNormal];
-        cardButton.enabled = !card.isMatched;
-        self.scoreLabel.text = [NSString stringWithFormat:@"Score: %d", self.game.score];
+    NSMutableAttributedString *outcomeAttributedString = [[NSMutableAttributedString alloc] initWithString:outcomeString];
+    
+    // Generate attributed string of card titles
+    NSMutableAttributedString *cardsAttributedString = [[NSMutableAttributedString alloc] init];
+    for (Card *card in self.game.lastFaceUpCards) {
+        [cardsAttributedString appendAttributedString:[self faceUpTitleForCard:card]];
+        if ([self.game.lastFaceUpCards indexOfObject:card] != [self.game.lastFaceUpCards count] - 1)
+            [cardsAttributedString appendAttributedString:[[NSAttributedString alloc] initWithString:@" "]];
     }
     
-    self.lastChoiceOutcomeLabel.text = [self.previousOutcomes lastObject];
-    self.lastChoiceOutcomeLabel.alpha = 1;
+    // Replace placeholder in outcome string
+    NSRange cardsRange = [outcomeString rangeOfString:@"[CARDS]"];
+    [outcomeAttributedString replaceCharactersInRange:cardsRange withAttributedString:cardsAttributedString];
+    UIFontDescriptor *bodyDescriptor = [UIFontDescriptor
+                                        preferredFontDescriptorWithTextStyle:UIFontTextStyleBody];
+    [outcomeAttributedString addAttribute:NSFontAttributeName
+                                    value:[UIFont fontWithDescriptor:bodyDescriptor size:13]
+                                    range:NSMakeRange(0, [outcomeAttributedString.string length])];
     
-    self.previousOutcomesSlider.maximumValue = [self.previousOutcomes count] - 1;
-    [self.previousOutcomesSlider setValue:[self.previousOutcomes count] animated:YES];
-    self.previousOutcomesSlider.enabled = [self.previousOutcomes count] >= 2 ? YES : NO;
+    self.lastOutcome = outcomeAttributedString;
+    // If the outcome is either a match or a mismatch, store it in previousOutcomes
+    if (self.game.lastChoiceOutcome == MatchOutcome || self.game.lastChoiceOutcome == MismatchOutcome)
+        [self.previousOutcomes addObject:outcomeAttributedString];
 }
 
-- (NSString *)titleForCard:(Card *)card
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
-    return card.isChosen ? card.contents : @"";
-}
-
-- (UIImage *)backgroundImageForCard:(Card *)card
-{
-    return [UIImage imageNamed:card.isChosen ? @"CardFront" : @"CardBack"];
+    if ([segue.identifier isEqualToString:@"Show History"]) {
+        if ([segue.destinationViewController isKindOfClass:[HistoryViewController class]]) {
+            HistoryViewController *historyVC = (HistoryViewController *)segue.destinationViewController;
+            historyVC.previousOutcomes = self.previousOutcomes;
+        }
+    }
 }
 
 @end
