@@ -50,13 +50,17 @@
         if (!(1 <= setCard.number && setCard.number <= NUMBER_OF_SET_FEATURES_PER_TYPE))
             return nil; // should never happen
         
+        // Note for graders: I am currently printing out a number and a shape
+        // I could just have easily drawn the requisite number of copies of the shape
+        // instead, but was having trouble fitting them on the card face. Maybe
+        // I can reattempt it when we do custom shape drawing.
         NSString *title = [NSString stringWithFormat:@"%d%@", setCard.number, shape];
         NSMutableAttributedString *attributedTitle = [[NSMutableAttributedString alloc]
                                                       initWithString:title];
         NSRange shapeRange = NSMakeRange(1, 1);
         
         CGFloat red, green, blue;
-        // These color values are custom (and made slightly easier for the eye)
+        // These color values are custom (and made slightly easier on the eye)
         switch (setCard.color) {
             case PurpleColor:
                 red = 0.5;
