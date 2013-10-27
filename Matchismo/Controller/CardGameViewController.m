@@ -8,7 +8,6 @@
 
 #import "CardGameViewController.h"
 #import "CardMatchingGame.h"
-#import "HistoryViewController.h"
 
 @interface CardGameViewController ()
 
@@ -154,16 +153,6 @@
     // If the outcome is either a match or a mismatch, store it in previousOutcomes
     if (self.game.lastChoiceOutcome == MatchOutcome || self.game.lastChoiceOutcome == MismatchOutcome)
         [self.previousOutcomes addObject:outcomeAttributedString];
-}
-
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
-{
-    if ([segue.identifier isEqualToString:@"Show History"]) {
-        if ([segue.destinationViewController isKindOfClass:[HistoryViewController class]]) {
-            HistoryViewController *historyVC = (HistoryViewController *)segue.destinationViewController;
-            historyVC.previousOutcomes = self.previousOutcomes;
-        }
-    }
 }
 
 @end

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="4510" systemVersion="12F37" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" initialViewController="VYc-cz-G7v">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="4514" systemVersion="13A603" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" initialViewController="3EI-Y9-bFk">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3742"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3746"/>
     </dependencies>
     <scenes>
         <!--Navigation Controller - Playing Cards-->
@@ -349,13 +349,7 @@
                         </subviews>
                         <color key="backgroundColor" red="0.0" green="0.50196081400000003" blue="0.25098040700000002" alpha="1" colorSpace="calibratedRGB"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Playing Cards" id="a0A-vL-iZq">
-                        <barButtonItem key="rightBarButtonItem" title="History" id="G5l-gI-yPG">
-                            <connections>
-                                <segue destination="S8S-RL-Vbq" kind="push" identifier="Show History" id="xG5-hX-reu"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Playing Cards" id="a0A-vL-iZq"/>
                     <connections>
                         <outlet property="lastChoiceOutcomeLabel" destination="Skv-0x-Ytb" id="Vqk-Cj-m9w"/>
                         <outlet property="scoreLabel" destination="CAr-SN-83m" id="FFC-5p-PZr"/>
@@ -408,6 +402,43 @@
             </objects>
             <point key="canvasLocation" x="-540" y="195"/>
         </scene>
+        <!--View Controller-->
+        <scene sceneID="IMP-5G-BsW">
+            <objects>
+                <viewController id="3EI-Y9-bFk" customClass="ViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="fRb-jC-JQV"/>
+                        <viewControllerLayoutGuide type="bottom" id="okt-um-0IK"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="PAQ-We-kD5">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="c3f-lo-iB3" customClass="PlayingCardView">
+                                <rect key="frame" x="81" y="120" width="159" height="240"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                <gestureRecognizers/>
+                                <connections>
+                                    <outletCollection property="gestureRecognizers" destination="gEB-PB-GLL" appends="YES" id="vex-Rg-aSd"/>
+                                </connections>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" red="0.0" green="0.50196081399917603" blue="0.25098040699958801" alpha="1" colorSpace="calibratedRGB"/>
+                    </view>
+                    <connections>
+                        <outlet property="playingCardView" destination="c3f-lo-iB3" id="dJq-1B-YYN"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="aw4-v9-frc" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <swipeGestureRecognizer direction="right" id="gEB-PB-GLL">
+                    <connections>
+                        <action selector="swipe:" destination="3EI-Y9-bFk" id="VAf-E6-JOi"/>
+                    </connections>
+                </swipeGestureRecognizer>
+            </objects>
+            <point key="canvasLocation" x="-540" y="775"/>
+        </scene>
         <!--Navigation Controller - Set-->
         <scene sceneID="cQg-N0-rRV">
             <objects>
@@ -425,40 +456,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="aVK-am-72r" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-18" y="496"/>
-        </scene>
-        <!--History View Controller - History-->
-        <scene sceneID="dDP-Xh-4fo">
-            <objects>
-                <viewController id="S8S-RL-Vbq" customClass="HistoryViewController" sceneMemberID="viewController">
-                    <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="8xW-U1-DCo"/>
-                        <viewControllerLayoutGuide type="bottom" id="B8z-HR-fGq"/>
-                    </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="Rp9-Fs-d1o">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="480"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                        <subviews>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" editable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="P7z-Dl-8cA">
-                                <rect key="frame" x="0.0" y="20" width="320" height="440"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                <string key="text">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.</string>
-                                <fontDescription key="fontDescription" type="system" pointSize="13"/>
-                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                            </textView>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <navigationItem key="navigationItem" title="History" id="gSS-Dj-oa2">
-                        <barButtonItem key="backBarButtonItem" title="Back" id="5mm-Pv-nlO"/>
-                    </navigationItem>
-                    <connections>
-                        <outlet property="historyView" destination="P7z-Dl-8cA" id="UgK-au-2hU"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="uc0-F8-lUc" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="841" y="195"/>
         </scene>
         <!--Set Card Game View Controller - Set-->
         <scene sceneID="C1N-Xa-HZo">
@@ -920,13 +917,7 @@
                         <color key="backgroundColor" red="0.0" green="0.50196081400000003" blue="0.25098040700000002" alpha="1" colorSpace="calibratedRGB"/>
                     </view>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Set" id="dgF-EW-J7f">
-                        <barButtonItem key="rightBarButtonItem" title="History" id="BXD-WZ-wgu">
-                            <connections>
-                                <segue destination="S8S-RL-Vbq" kind="push" identifier="Show History" id="o23-54-JwP"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Set" id="dgF-EW-J7f"/>
                     <connections>
                         <outlet property="lastChoiceOutcomeLabel" destination="Vvb-6z-Ajr" id="7kh-q4-see"/>
                         <outlet property="scoreLabel" destination="BsF-Jn-cvK" id="Ksf-Qo-6Eu"/>
@@ -985,7 +976,4 @@
         <simulatedOrientationMetrics key="orientation"/>
         <simulatedScreenMetrics key="destination"/>
     </simulatedMetricsContainer>
-    <inferredMetricsTieBreakers>
-        <segue reference="xG5-hX-reu"/>
-    </inferredMetricsTieBreakers>
 </document>
