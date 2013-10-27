@@ -42,8 +42,6 @@ static const int MATCH_SCORE = 3;
                                (self.number == secondCard.number) +
                                (firstCard.number == secondCard.number));
         
-        NSLog(@"num_color: %d, num_shade: %d, num_shape: %d, num_number: %d", numColorMatches, numShadingMatches, numShapeMatches, numNumberMatches);
-
         if ((numColorMatches == 3 || numColorMatches == 0) &&
             (numShadingMatches == 3 || numShadingMatches == 0) &&
             (numShapeMatches == 3 || numShapeMatches == 0) &&
