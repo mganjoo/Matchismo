@@ -9,7 +9,9 @@
 #import "PlayingCardView.h"
 
 @interface PlayingCardView()
+
 @property (nonatomic) CGFloat faceCardScaleFactor;
+
 @end
 
 @implementation PlayingCardView
@@ -68,27 +70,14 @@
 
 #pragma mark - Drawing
 
-#define CORNER_FONT_STANDARD_HEIGHT 180.0
-#define CORNER_RADIUS 12.0
+#define CORNER_OFFSET_RADIUS_SCALE 3.0
 
-- (CGFloat)cornerScaleFactor { return self.bounds.size.height / CORNER_FONT_STANDARD_HEIGHT; }
-- (CGFloat)cornerRadius { return CORNER_RADIUS * [self cornerScaleFactor]; }
-- (CGFloat)cornerOffset { return [self cornerRadius] / 3.0; }
+- (CGFloat)cornerOffset { return [self cornerRadius] / CORNER_OFFSET_RADIUS_SCALE; }
 
-// Only override drawRect: if you perform custom drawing.
-// An empty implementation adversely affects performance during animation.
+// Override CardView drawRect: method
 - (void)drawRect:(CGRect)rect
 {
-    // Drawing code
-    UIBezierPath *roundedRect = [UIBezierPath bezierPathWithRoundedRect:self.bounds cornerRadius:[self cornerRadius]];
-    
-    [roundedRect addClip];
-    
-    [[UIColor whiteColor] setFill];
-    UIRectFill(self.bounds);
-    
-    [[UIColor blackColor] setStroke];
-    [roundedRect stroke];
+    [super drawRect:rect];
     
     if (self.faceUp) {
         UIImage *faceImage = [UIImage imageNamed:[NSString stringWithFormat:@"%@%@", [self rankAsString], self.suit]];
@@ -130,7 +119,8 @@
     UIFont *cornerFont = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
     cornerFont = [cornerFont fontWithSize:cornerFont.pointSize * [self cornerScaleFactor]];
     
-    NSAttributedString *cornerText = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@\n%@", [self rankAsString], self.suit] attributes:@{ NSFontAttributeName : cornerFont, NSParagraphStyleAttributeName : paragraphStyle }];
+    NSAttributedString *cornerText = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@\n%@", [self rankAsString], self.suit]
+                                                                     attributes:@{ NSFontAttributeName : cornerFont, NSParagraphStyleAttributeName : paragraphStyle }];
     
     CGRect textBounds;
     textBounds.origin = CGPointMake([self cornerOffset], [self cornerOffset]);
@@ -144,10 +134,11 @@
 
 #pragma mark - Pips
 
-#define PIP_HOFFSET_PERCENTAGE 0.165
+#define PIP_HOFFSET_PERCENTAGE  0.165
 #define PIP_VOFFSET1_PERCENTAGE 0.090
 #define PIP_VOFFSET2_PERCENTAGE 0.175
 #define PIP_VOFFSET3_PERCENTAGE 0.270
+#define PIP_FONT_SCALE_FACTOR   0.012
 
 - (void)drawPips
 {
@@ -178,25 +169,24 @@
     }
 }
 
-#define PIP_FONT_SCALE_FACTOR 0.012
-
 - (void)drawPipsWithHorizontalOffset:(CGFloat)hoffset
                       verticalOffset:(CGFloat)voffset
                           upsideDown:(BOOL)upsideDown
 {
     if (upsideDown) [self pushContextAndRotateUpsideDown];
-    CGPoint middle = CGPointMake(self.bounds.size.width/2, self.bounds.size.height/2);
+    CGPoint middle = CGPointMake(self.bounds.size.width / 2, self.bounds.size.height / 2);
     UIFont *pipFont = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
     pipFont = [pipFont fontWithSize:[pipFont pointSize] * self.bounds.size.width * PIP_FONT_SCALE_FACTOR];
-    NSAttributedString *attributedSuit = [[NSAttributedString alloc] initWithString:self.suit attributes:@{ NSFontAttributeName : pipFont }];
+    NSAttributedString *attributedSuit = [[NSAttributedString alloc] initWithString:self.suit
+                                                                         attributes:@{ NSFontAttributeName : pipFont }];
     CGSize pipSize = [attributedSuit size];
     CGPoint pipOrigin = CGPointMake(
-                                    middle.x-pipSize.width/2.0-hoffset*self.bounds.size.width,
-                                    middle.y-pipSize.height/2.0-voffset*self.bounds.size.height
+                                    middle.x - pipSize.width / 2.0 - hoffset * self.bounds.size.width,
+                                    middle.y - pipSize.height / 2.0 - voffset * self.bounds.size.height
                                     );
     [attributedSuit drawAtPoint:pipOrigin];
     if (hoffset) {
-        pipOrigin.x += hoffset*2.0*self.bounds.size.width;
+        pipOrigin.x += hoffset * 2.0 * self.bounds.size.width;
         [attributedSuit drawAtPoint:pipOrigin];
     }
     if (upsideDown) [self popContext];
@@ -214,29 +204,6 @@
                             verticalOffset:voffset
                                 upsideDown:YES];
     }
-}
-
-#pragma mark - Initialization
-
-- (void)setup
-{
-    self.backgroundColor = nil;
-    self.opaque = NO;
-    self.contentMode = UIViewContentModeRedraw;
-}
-
-- (void)awakeFromNib
-{
-    [self setup];
-}
-
-- (id)initWithFrame:(CGRect)frame
-{
-    self = [super initWithFrame:frame];
-    if (self) {
-        // Initialization code
-    }
-    return self;
 }
 
 @end

@@ -34,13 +34,13 @@
         
         NSString *shape;
         switch (setCard.shape) {
-            case TriangleShape:
+            case SquiggleShape:
                 shape = @"▲";
                 break;
-            case CircleShape:
+            case OvalShape:
                 shape = @"●";
                 break;
-            case SquareShape:
+            case DiamondShape:
                 shape = @"■";
                 break;
             default:

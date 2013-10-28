@@ -31,9 +31,9 @@ typedef NS_ENUM(NSUInteger, SetCardShading) {
 
 typedef NS_ENUM(NSUInteger, SetCardShape) {
     UnknownShape = 0,
-    TriangleShape,
-    CircleShape,
-    SquareShape
+    SquiggleShape,
+    OvalShape,
+    DiamondShape
 };
 
 @interface SetCard : Card
