@@ -34,15 +34,6 @@
     [self setNeedsDisplay];
 }
 
-//- (id)initWithFrame:(CGRect)frame
-//{
-//    self = [super initWithFrame:frame];
-//    if (self) {
-//        // Initialization code
-//    }
-//    return self;
-//}
-
 // "Standard" (by our book) card width and height
 // (See note about scaling below)
 #define STANDARD_CARD_WIDTH  120.0
@@ -77,14 +68,6 @@
 #define SQUIGGLE_BEZIER2_LENGTH     15.0
 #define SQUIGGLE_BEZIER3_LENGTH     10.0
 
-// Note about scaling
-// ------------------
-// The following drawing methods will scale drawing by _width_ of the provided bounding
-// rectangle, and will keep proportions consistent with respective WIDTH and HEIGHT constants.
-// The caller must ensure that the _height_ of the provided bounding rectangle is sufficient
-// (and ideally, in the same proportion to the respective HEIGHT constant as the width is to
-// the WIDTH constant).
-
 - (void)drawRect:(CGRect)rect
 {
     [super drawRect:rect];
@@ -109,6 +92,14 @@
 }
 
 #pragma Mark - Shape drawing methods
+
+// Note about scaling
+// ------------------
+// The following drawing methods will scale drawing by _width_ of the provided bounding
+// rectangle, and will keep proportions consistent with respective WIDTH and HEIGHT constants.
+// The caller must ensure that the _height_ of the provided bounding rectangle is sufficient
+// (and ideally, in the same proportion to the respective HEIGHT constant as the width is to
+// the WIDTH constant).
 
 // Find the scale factor (wrt the default shape dimensions)
 - (CGFloat)shapeScaleFactor:(CGRect)boundingRect
@@ -138,36 +129,9 @@
             return;
     }
     
-    [[self makeStrokeColor] setStroke];
+    [makeColor(self.color) setStroke];
     [shape stroke];
-}
-
-- (UIColor *)makeStrokeColor
-{
-    CGFloat red, green, blue;
-    
-    // These color values are custom (and made slightly easier on the eye)
-    switch (self.color) {
-        case PurpleColor:
-            red = 0.5;
-            green = 0.0;
-            blue = 0.5;
-            break;
-        case RedColor:
-            red = 1.0;
-            green = 0.0;
-            blue = 0.0;
-            break;
-        case GreenColor:
-            red = 0.25;
-            green = 0.65;
-            blue = 0.35;
-            break;
-        default:
-            return nil; // should never happen
-    }
-    
-    return [UIColor colorWithRed:red green:green blue:blue alpha:1.0];
+    [self shadeShape:shape];
 }
 
 - (UIBezierPath *)makeOval:(CGRect)boundingRect
@@ -257,6 +221,138 @@ static inline CGFloat degreesToRadians(CGFloat degrees)
                                               yBottom - bezier3HandleLength * sin(bezier4Angle))];
     [squiggle closePath];
     return squiggle;
+}
+
+- (void)shadeShape:(UIBezierPath *)shape
+{
+    switch (self.shading) {
+        case OpenShading:
+            return; // no shading to be done
+        case SolidShading:
+            [self shadeShapeWithSolidShading:shape];
+            break;
+        case StripedShading:
+            [self shadeShapeWithStripedShading:shape];
+            break;
+        default:
+            return;
+    }
+}
+
+- (void)pushContextAndClip:(CGContextRef)context withShape:(UIBezierPath *)shape
+{
+    CGContextSaveGState(context);
+    [shape addClip];
+}
+
+- (void)popContext:(CGContextRef)context
+{
+    CGContextRestoreGState(context);
+}
+
+- (void)shadeShapeWithSolidShading:(UIBezierPath *)shape
+{
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    [self pushContextAndClip:context withShape:shape];
+
+    CGContextSetFillColorWithColor(context, makeColor(self.color).CGColor);
+    CGContextFillRect(context, self.bounds);
+    
+    [self popContext:context];
+}
+
+#define STRIPED_PATTERN_CELL_WIDTH  4
+#define STRIPED_PATTERN_CELL_HEIGHT 1
+
+- (void)shadeShapeWithStripedShading:(UIBezierPath *)shape
+{
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    [self pushContextAndClip:context withShape:shape];
+
+    // We use Quartz2D pattern shading to build stripes (some of this boilerplate is from iOS official documentation)
+    // Unfortunately, we will have to check for the color of the set card twice; once here, and once during pattern drawing
+    CGPatternCallbacks callback = { 0, nil, nil };
+    switch (self.color) {
+        case PurpleColor:
+            callback.drawPattern = &drawPurpleStripedPattern;
+            break;
+        case RedColor:
+            callback.drawPattern = &drawRedStripedPattern;
+            break;
+        case GreenColor:
+            callback.drawPattern = &drawGreenStripedPattern;
+            break;
+        default:
+            return; // should never happen
+    }
+    
+    CGColorSpaceRef patternSpace = CGColorSpaceCreatePattern(nil);
+    CGContextSetFillColorSpace(context, patternSpace);
+    CGColorSpaceRelease(patternSpace);
+    
+    CGPatternRef pattern = CGPatternCreate(nil,
+                                        CGRectMake(0, 0, STRIPED_PATTERN_CELL_WIDTH, STRIPED_PATTERN_CELL_HEIGHT),
+                                        CGAffineTransformIdentity,
+                                        STRIPED_PATTERN_CELL_WIDTH, STRIPED_PATTERN_CELL_HEIGHT,
+                                        kCGPatternTilingConstantSpacingMinimalDistortion,
+                                        true,
+                                        &callback);
+    CGFloat alpha = 1.0;
+    CGContextSetFillPattern(context, pattern, &alpha);
+    CGPatternRelease(pattern);
+    CGContextFillRect(context, self.bounds);
+    
+    [self popContext:context];
+}
+
+UIColor *makeColor(SetCardColor colorName)
+{
+    CGFloat red, green, blue;
+    
+    // These color values are custom (and made slightly easier on the eye)
+    switch (colorName) {
+        case PurpleColor:
+            red = 0.5;
+            green = 0.0;
+            blue = 0.5;
+            break;
+        case RedColor:
+            red = 1.0;
+            green = 0.0;
+            blue = 0.0;
+            break;
+        case GreenColor:
+            red = 0.25;
+            green = 0.65;
+            blue = 0.35;
+            break;
+        default:
+            return nil; // should never happen
+    }
+    
+    return [UIColor colorWithRed:red green:green blue:blue alpha:1.0];
+}
+
+void drawPurpleStripedPattern(void *info, CGContextRef context)
+{
+    drawStripedPattern(info, context, makeColor(PurpleColor));
+}
+
+void drawRedStripedPattern(void *info, CGContextRef context)
+{
+    drawStripedPattern(info, context, makeColor(RedColor));
+}
+
+void drawGreenStripedPattern(void *info, CGContextRef context)
+{
+    drawStripedPattern(info, context, makeColor(GreenColor));
+}
+
+void drawStripedPattern(void *info, CGContextRef context, UIColor *color)
+{
+    CGContextSetFillColorWithColor(context, color.CGColor);
+    CGContextFillRect(context, CGRectMake(STRIPED_PATTERN_CELL_WIDTH / 2, 0,
+                                          STRIPED_PATTERN_CELL_WIDTH / 2, STRIPED_PATTERN_CELL_HEIGHT));
 }
 
 @end
