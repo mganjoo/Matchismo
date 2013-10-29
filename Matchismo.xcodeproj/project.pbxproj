@@ -154,6 +154,7 @@
 				450D4A1717F761AD00780B43 /* Model */,
 				45EF08E4181CF12F0058595B /* View */,
 				4529BC61180A8A20008B6A67 /* Controller */,
+				450D49F417F410C500780B43 /* Main.storyboard */,
 				450D49FA17F410C500780B43 /* Images.xcassets */,
 				450D49E917F410C400780B43 /* Supporting Files */,
 			);
@@ -244,7 +245,6 @@
 		45EF08E4181CF12F0058595B /* View */ = {
 			isa = PBXGroup;
 			children = (
-				450D49F417F410C500780B43 /* Main.storyboard */,
 				4520184F181D084100555F27 /* CardView.h */,
 				45201850181D084100555F27 /* CardView.m */,
 				45EF08E5181D008F0058595B /* PlayingCardView.h */,

@@ -70,7 +70,6 @@ const float CARD_ASPECT_RATIO = STANDARD_CARD_WIDTH / STANDARD_CARD_HEIGHT;
 }
 
 // The standard way to draw a card, with rounded corners.
-// Subclasses can override the drawing of contents.
 - (void)drawRect:(CGRect)rect
 {
     UIBezierPath *cardPath = [UIBezierPath bezierPathWithRoundedRect:self.bounds
@@ -86,6 +85,7 @@ const float CARD_ASPECT_RATIO = STANDARD_CARD_WIDTH / STANDARD_CARD_HEIGHT;
     [self drawContents:rect];
 }
 
+// Subclasses can override the drawing of contents.
 - (void)drawContents:(CGRect)rect
 {
 }
