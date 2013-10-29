@@ -9,11 +9,16 @@
 #import "CardGameViewController.h"
 #import "Grid.h"
 
-@interface CardGameViewController ()
+@interface CardGameViewController () <UIGestureRecognizerDelegate>
 
 @property (strong, nonatomic) CardMatchingGame *game;
 @property (strong, nonatomic) NSMutableArray *cardViews; // of CardView
 @property (strong, nonatomic) Grid *grid;
+
+// Dynamic animator stuff
+@property (strong, nonatomic) UITapGestureRecognizer *gestureRecognizer;
+@property (strong, nonatomic) UIDynamicAnimator *cardGatheringAnimator;
+@property (strong, nonatomic) NSMutableArray *gatheringAttachments; // of UIAttachmentBehavior
 
 // UI elements
 @property (weak, nonatomic) IBOutlet UILabel *scoreLabel;
@@ -25,6 +30,25 @@
 #define DEFAULT_NUMBER_OF_CARDS_IN_PLAY  10
 
 @implementation CardGameViewController
+
+- (void)viewDidAppear:(BOOL)animated
+{
+    // Set up gesture recognizers for dynamic behavior
+    UIPinchGestureRecognizer *pinchRecognizer = [[UIPinchGestureRecognizer alloc]
+                                                 initWithTarget:self
+                                                 action:@selector(handleCardPlaceholderPinch:)];
+
+    UIPanGestureRecognizer *panRecognizer = [[UIPanGestureRecognizer alloc]
+                                          initWithTarget:self
+                                          action:@selector(handleCardPlaceholderPan:)];
+    panRecognizer.minimumNumberOfTouches = 2;
+    
+    pinchRecognizer.delegate = self;
+    panRecognizer.delegate = self;
+    
+    [self.cardsPlaceholderView addGestureRecognizer:panRecognizer];
+    [self.cardsPlaceholderView addGestureRecognizer:pinchRecognizer];
+}
 
 - (void)viewDidLayoutSubviews
 {
@@ -113,20 +137,19 @@
 #define NEW_CARD_ARRIVAL_DELAY_START     0.3
 #define NEW_CARD_ARRIVAL_DELAY_BASE_STEP 0.1
 #define NEW_CARD_ARRIVAL_DELAY_STEP      0.03
+#define NEW_CARD_VIEW_OFFSET_FRACTION    0.3
 
 - (void)updateUI
 {
     // We only collect the cards we are showing
     NSMutableArray *cardsToShow = [[NSMutableArray alloc] init];
     NSMutableArray *cardsToRemove = [[NSMutableArray alloc] init];
-    for (UIView *view in [self.cardsPlaceholderView subviews]) {
-        if ([view isKindOfClass:[CardView class]]) {
-            CardView *cardView = (CardView *)view;
-            if ([cardView needsRemoval]) {
-                [cardsToRemove addObject:cardView];
-            } else {
-                [cardsToShow addObject:cardView];
-            }
+    for (CardView *view in [self activeCardViews]) {
+        CardView *cardView = (CardView *)view;
+        if ([cardView needsRemoval]) {
+            [cardsToRemove addObject:cardView];
+        } else {
+            [cardsToShow addObject:cardView];
         }
     }
     
@@ -161,7 +184,9 @@
     // Draw cards
     int row = 0, col = 0;
     for (CardView *cardView in cardsToShow) {
-        if (cardView.center.y < self.cardsPlaceholderView.bounds.origin.y) {
+        if (cardView.center.y < self.cardsPlaceholderView.bounds.origin.y
+            && cardView.center.x > self.cardsPlaceholderView.bounds.origin.x
+            + self.cardsPlaceholderView.bounds.size.width * (1 + NEW_CARD_VIEW_OFFSET_FRACTION / 2)) {
             // If card is new (i.e. out of bounds) add a slight delay effect to simulate "dealing"
             currentDelay = currentBaseDelay;
             currentBaseDelay += NEW_CARD_ARRIVAL_DELAY_STEP;
@@ -230,6 +255,17 @@
     return i;
 }
 
+- (NSArray *)activeCardViews
+{
+    NSMutableArray *activeViews = [[NSMutableArray alloc] init];
+    for (UIView *view in [self.cardsPlaceholderView subviews]) {
+        if ([view isKindOfClass:[CardView class]]) {
+            [activeViews addObject:view];
+        }
+    }
+    return activeViews;
+}
+
 #pragma Mark - Creating, removing and animating cards
 
 #define NEW_CARD_VIEW_OFFSET_FRACTION 0.3
@@ -267,6 +303,93 @@
                          [cardsToRemove makeObjectsPerformSelector:@selector(removeFromSuperview)];
                      }
      ];
+}
+
+#pragma Mark - Pinching & collecting cards
+
+- (UIDynamicAnimator *)cardGatheringAnimator
+{
+    if (!_cardGatheringAnimator) {
+        _cardGatheringAnimator = [[UIDynamicAnimator alloc] initWithReferenceView:self.cardsPlaceholderView];
+    }
+    return _cardGatheringAnimator;
+}
+
+- (NSMutableArray *)gatheringAttachments
+{
+    if (!_gatheringAttachments)
+        _gatheringAttachments = [[NSMutableArray alloc] init];
+    return _gatheringAttachments;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer
+{
+    return YES;
+}
+
+- (void)handleCardPlaceholderPinch:(UIPinchGestureRecognizer *)gestureRecognizer
+{
+    CGPoint gesturePoint = [gestureRecognizer locationInView:self.cardsPlaceholderView];
+    switch (gestureRecognizer.state) {
+        case UIGestureRecognizerStateBegan:
+            [self gatherCardsToPoint:gesturePoint];
+            break;
+        case UIGestureRecognizerStateChanged:
+            [self updateCardsAttachmentDistanceByScale:gestureRecognizer.scale];
+            gestureRecognizer.scale = 1;
+            break;
+        case UIGestureRecognizerStateEnded:
+            [self releaseAttachedCards];
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)handleCardPlaceholderPan:(UIPanGestureRecognizer *)gestureRecognizer
+{
+    CGPoint gesturePoint = [gestureRecognizer locationInView:self.cardsPlaceholderView];
+    switch (gestureRecognizer.state) {
+        case UIGestureRecognizerStateChanged:
+            [self updateCardsAttachmentAnchor:gesturePoint];
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)gatherCardsToPoint:(CGPoint)gatherPoint
+{
+    for (CardView *cardView in [self activeCardViews]) {
+        UIAttachmentBehavior *attachment = [[UIAttachmentBehavior alloc] initWithItem:cardView
+                                                                     attachedToAnchor:gatherPoint];
+        
+        [self.gatheringAttachments addObject:attachment];
+        [self.cardGatheringAnimator addBehavior:attachment];
+    }
+}
+
+- (void)updateCardsAttachmentDistanceByScale:(CGFloat)scale
+{
+    for (UIAttachmentBehavior *attachment in self.gatheringAttachments) {
+        attachment.length *= scale;
+    }
+}
+
+- (void)updateCardsAttachmentAnchor:(CGPoint)anchor
+{
+    for (UIAttachmentBehavior *attachment in self.gatheringAttachments) {
+        attachment.anchorPoint = anchor;
+    }
+}
+
+- (void)releaseAttachedCards
+{
+    for (UIAttachmentBehavior *attachment in self.gatheringAttachments) {
+        [self.cardGatheringAnimator removeBehavior:attachment];
+    }
+    self.gatheringAttachments = nil;
+    [self updateUI];
 }
 
 @end

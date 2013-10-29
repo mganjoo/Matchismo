@@ -54,6 +54,11 @@
 #define HIGHLIGHT_COLOR_B 0.33
 #define TOGGLE_TIME 0.4
 
+// Constants for pattern definition
+#define STRIPED_PATTERN_CELL_WIDTH  2
+#define STRIPED_PATTERN_CELL_HEIGHT 1
+#define STRIPED_PATTERN_ANGLE_DEG   10
+
 - (void)drawContents:(CGRect)rect
 {
     switch (self.number) {
@@ -279,9 +284,6 @@ static inline CGFloat degreesToRadians(CGFloat degrees)
     [self popContext:context];
 }
 
-#define STRIPED_PATTERN_CELL_WIDTH  2
-#define STRIPED_PATTERN_CELL_HEIGHT 1
-
 - (void)shadeShapeWithStripedShading:(UIBezierPath *)shape
 {
     CGContextRef context = UIGraphicsGetCurrentContext();
@@ -310,7 +312,8 @@ static inline CGFloat degreesToRadians(CGFloat degrees)
     
     CGPatternRef pattern = CGPatternCreate(nil,
                                         CGRectMake(0, 0, STRIPED_PATTERN_CELL_WIDTH, STRIPED_PATTERN_CELL_HEIGHT),
-                                        CGAffineTransformIdentity,
+                                        CGAffineTransformRotate(CGAffineTransformIdentity,
+                                                                degreesToRadians(STRIPED_PATTERN_ANGLE_DEG)),
                                         STRIPED_PATTERN_CELL_WIDTH, STRIPED_PATTERN_CELL_HEIGHT,
                                         kCGPatternTilingConstantSpacingMinimalDistortion,
                                         true,

@@ -26,6 +26,8 @@
 #define STANDARD_CARD_HEIGHT         180.0
 #define DEFAULT_FACE_CARD_SCALE_FACTOR 0.90
 #define CARD_DIM_ALPHA                 0.4
+#define FLIP_TIME 0.4
+#define DIM_TIME  0.9
 
 @synthesize faceCardScaleFactor = _faceCardScaleFactor;
 
@@ -59,6 +61,12 @@
     [self setNeedsDisplay];
 }
 
+- (void)setDisabled:(BOOL)disabled
+{
+    _disabled = disabled;
+    [self setNeedsDisplay];
+}
+
 - (NSString *)rankAsString
 {
     return @[@"?",@"A",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"10",@"J",@"Q",@"K"][self.rank];
@@ -87,6 +95,13 @@
         [self drawCorners];
     } else {
         [[UIImage imageNamed:@"CardBack"] drawInRect:self.bounds];
+    }
+    
+    if (self.disabled) {
+        // Cover with rectangle if disabled
+        UIBezierPath *coveringRectangle = [UIBezierPath bezierPathWithRoundedRect:rect cornerRadius:self.cornerRadius];
+        [[UIColor colorWithWhite:0 alpha:CARD_DIM_ALPHA] setFill];
+        [coveringRectangle fill];
     }
 }
 
@@ -206,9 +221,6 @@
     [self flip];
 }
 
-#define FLIP_TIME 0.4
-#define DIM_TIME  0.9
-
 - (void)flip
 {
     [UIView transitionWithView:self
@@ -226,7 +238,7 @@
                       duration:DIM_TIME
                        options:0
                     animations:^{
-                        self.alpha = CARD_DIM_ALPHA;
+                        self.disabled = YES;
                     }
                     completion:nil];
 }

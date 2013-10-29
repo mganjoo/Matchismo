@@ -14,6 +14,7 @@
 @property (nonatomic) NSUInteger rank;
 @property (strong, nonatomic) NSString *suit;
 @property (nonatomic) BOOL faceUp;
+@property (nonatomic) BOOL disabled;
 
 // Methods for animation/transition
 - (void)flip;
