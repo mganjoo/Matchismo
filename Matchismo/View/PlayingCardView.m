@@ -18,7 +18,14 @@
 
 #pragma mark - Properties
 
+// Note: some of these were defined in CardView.h, but
+// these are meant to be completley independent of those
+// values, since there are other constants that were calculated
+// specifically using these values within _this_ file.
+#define STANDARD_CARD_WIDTH          120.0
+#define STANDARD_CARD_HEIGHT         180.0
 #define DEFAULT_FACE_CARD_SCALE_FACTOR 0.90
+#define CARD_DIM_ALPHA                 0.4
 
 @synthesize faceCardScaleFactor = _faceCardScaleFactor;
 
@@ -57,17 +64,6 @@
     return @[@"?",@"A",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"10",@"J",@"Q",@"K"][self.rank];
 }
 
-#pragma mark - Gesture Handling
-
-- (void)pinch:(UIPinchGestureRecognizer *)gesture
-{
-    if ((gesture.state == UIGestureRecognizerStateChanged) ||
-        (gesture.state == UIGestureRecognizerStateEnded)) {
-        self.faceCardScaleFactor *= gesture.scale;
-        gesture.scale = 1.0;
-    }
-}
-
 #pragma mark - Drawing
 
 #define CORNER_OFFSET_RADIUS_SCALE 3.0
@@ -75,10 +71,8 @@
 - (CGFloat)cornerOffset { return [self cornerRadius] / CORNER_OFFSET_RADIUS_SCALE; }
 
 // Override CardView drawRect: method
-- (void)drawRect:(CGRect)rect
+- (void)drawContents:(CGRect)rect
 {
-    [super drawRect:rect];
-    
     if (self.faceUp) {
         UIImage *faceImage = [UIImage imageNamed:[NSString stringWithFormat:@"%@%@", [self rankAsString], self.suit]];
         if (faceImage) {
@@ -117,7 +111,8 @@
     paragraphStyle.alignment = NSTextAlignmentCenter;
     
     UIFont *cornerFont = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
-    cornerFont = [cornerFont fontWithSize:cornerFont.pointSize * [self cornerScaleFactor]];
+    double scaleFactor = self.bounds.size.width / STANDARD_CARD_WIDTH;
+    cornerFont = [cornerFont fontWithSize:cornerFont.pointSize * scaleFactor];
     
     NSAttributedString *cornerText = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@\n%@", [self rankAsString], self.suit]
                                                                      attributes:@{ NSFontAttributeName : cornerFont, NSParagraphStyleAttributeName : paragraphStyle }];
@@ -204,6 +199,36 @@
                             verticalOffset:voffset
                                 upsideDown:YES];
     }
+}
+
+- (void)updateAfterTouch
+{
+    [self flip];
+}
+
+#define FLIP_TIME 0.4
+#define DIM_TIME  0.9
+
+- (void)flip
+{
+    [UIView transitionWithView:self
+                      duration:FLIP_TIME
+                       options:UIViewAnimationOptionTransitionFlipFromLeft
+                    animations:^{
+                        self.faceUp = !self.faceUp;
+                    }
+                    completion:nil];
+}
+
+- (void)dim
+{
+    [UIView transitionWithView:self
+                      duration:DIM_TIME
+                       options:0
+                    animations:^{
+                        self.alpha = CARD_DIM_ALPHA;
+                    }
+                    completion:nil];
 }
 
 @end

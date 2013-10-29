@@ -11,11 +11,13 @@
 @interface CardMatchingGame()
 
 @property (nonatomic, readwrite) NSInteger score;
+@property (nonatomic, readwrite) NSUInteger numberOfCardsInPlay;
+@property (nonatomic, strong) Deck *deck;
 @property (nonatomic, strong) NSMutableArray *cards; // of Card
 @property (nonatomic) NSUInteger numberOfCardsInChoice;
-@property (nonatomic, strong, readwrite) NSArray *lastFaceUpCards;
+@property (nonatomic, strong, readwrite) NSArray *lastFaceUpCardIndices;
 @property (nonatomic, readwrite) ChoiceOutcome lastChoiceOutcome;
-@property (nonatomic, readwrite) int lastScoreChange;
+@property (nonatomic) int lastScoreChange;
 
 @end
 
@@ -30,21 +32,17 @@
 // designated initializer
 - (instancetype)initWithCardCount:(NSUInteger)count
                         usingDeck:(Deck *)deck
-              numberOfCardsInChoice:(NSUInteger)numberOfCardsInChoice
+            numberOfCardsInChoice:(NSUInteger)numberOfCardsInChoice
 {
     self = [super init];
     
     if (self) {
-        for (int i = 0; i < count; i++) {
-            Card *card = [deck drawRandomCard];
-            if (card) {
-                [self.cards addObject:card];
-            } else {
-                self = nil;
-                break;
-            }
-        }
+        self.deck = deck;
         self.numberOfCardsInChoice = numberOfCardsInChoice;
+        for (int i = 0; i < count; i++) {
+            int idx = [self addCardToPlayAndGetIndex];
+            if (idx < 0) return nil;
+        }
     }
     
     return self;
@@ -64,10 +62,20 @@ static const int MISMATCH_PENALTY = 2;
 static const int MATCH_BONUS = 4;
 static const int COST_TO_CHOOSE = 1;
 
-- (NSArray *)lastFaceUpCards
+- (NSArray *)lastFaceUpCardIndices
 {
-    if (!_lastFaceUpCards) _lastFaceUpCards = [[NSArray alloc] init];
-    return _lastFaceUpCards;
+    if (!_lastFaceUpCardIndices) _lastFaceUpCardIndices = [[NSArray alloc] init];
+    return _lastFaceUpCardIndices;
+}
+
+// Try adding card to play, and return index of successfully added card
+- (int)addCardToPlayAndGetIndex
+{
+    Card *card = [self.deck drawRandomCard];
+    if (!card) return -1;
+    [self.cards addObject:card];
+    ++self.numberOfCardsInPlay;
+    return [self.cards indexOfObject:card];
 }
 
 - (void)chooseCardAtIndex:(NSUInteger)index
@@ -77,7 +85,7 @@ static const int COST_TO_CHOOSE = 1;
     if (!card.isMatched) {
         if (card.isChosen) {
             card.chosen = NO;
-            self.lastFaceUpCards = nil;
+            self.lastFaceUpCardIndices = nil;
             self.lastChoiceOutcome = NoOutcome;
             self.lastScoreChange = 0;
         } else {
@@ -95,6 +103,7 @@ static const int COST_TO_CHOOSE = 1;
                     self.score += self.lastScoreChange;
                     self.lastChoiceOutcome = MatchOutcome;
                     card.matched = YES;
+                    --self.numberOfCardsInPlay;
                     for (Card *otherCard in faceUpCards) {
                         otherCard.matched = YES;
                     }
@@ -112,7 +121,11 @@ static const int COST_TO_CHOOSE = 1;
             }
             
             [faceUpCards addObject:card];
-            self.lastFaceUpCards = [faceUpCards copy];
+            NSMutableArray *lastFaceUpCardIndices = [[NSMutableArray alloc] init];
+            for (Card *card in faceUpCards) {
+                [lastFaceUpCardIndices addObject:[[NSNumber alloc] initWithInt:[self.cards indexOfObject:card]]];
+            }
+            self.lastFaceUpCardIndices = [lastFaceUpCardIndices copy];
 
             // Note: we don't count this in lastScoreChange
             self.score -= COST_TO_CHOOSE;

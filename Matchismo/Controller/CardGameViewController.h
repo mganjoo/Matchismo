@@ -7,17 +7,24 @@
 
 #import <UIKit/UIKit.h>
 #import "Deck.h"
+#import "CardView.h"
+#import "CardMatchingGame.h"
 
 // Abstract class
 @interface CardGameViewController : UIViewController
 
-- (Deck *)createDeck; // abstract
+// Abstract methods (must be overridden)
+- (Deck *)createDeck;
+- (CardView *)createViewForCard:(Card *)card;
+- (void)updateTappedCardView:(CardView *)cardView forOutcome:(ChoiceOutcome)outcome;
+- (void)updateOpenCardView:(CardView *)cardView forOutcome:(ChoiceOutcome)outcome;
 
-- (NSUInteger)numberOfCardsInChoice;
+// Methods that should only be used or _extended_ by subclasses
+- (int)addCardsToPlay:(NSUInteger)numToAdd;
+- (void)redeal;
 
-- (NSAttributedString *)faceUpTitleForCard:(Card *)card;
-- (NSAttributedString *)faceDownTitleForCard:(Card *)card;
-- (NSString *)faceUpBackgroundImageNameForCard:(Card *)card;
-- (NSString *)faceDownBackgroundImageNameForCard:(Card *)card;
+// Read-only properties with getters (getters can be overridden)
+@property (nonatomic, readonly) NSUInteger numberOfCardsInChoice;
+@property (nonatomic, readonly) NSUInteger numberOfInitialCardsInPlay;
 
 @end

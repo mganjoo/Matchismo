@@ -8,12 +8,18 @@
 
 #import "CardView.h"
 
+@interface CardView()
+
+@end
+
 @implementation CardView
 
 // Standard width, height & radius for our cards
-#define CARD_STANDARD_WIDTH         120.0
-#define CARD_STANDARD_HEIGHT        180.0
-#define CARD_STANDARD_CORNER_RADIUS 12.0
+#define STANDARD_CARD_WIDTH         120.0
+#define STANDARD_CARD_HEIGHT        180.0
+#define STANDARD_CARD_CORNER_RADIUS  12.0
+
+const float CARD_ASPECT_RATIO = STANDARD_CARD_WIDTH / STANDARD_CARD_HEIGHT;
 
 #pragma mark - Initialization
 
@@ -24,33 +30,64 @@
     self.contentMode = UIViewContentModeRedraw;
 }
 
+- (id)init
+{
+    id cardView = [super init];
+    if (cardView) [self setup];
+    return cardView;
+}
+
 - (void)awakeFromNib
 {
     [self setup];
 }
 
-- (id)initWithFrame:(CGRect)frame
+- (UIColor *)strokeColor
 {
-    return [super initWithFrame:frame];
+    if (!_strokeColor) _strokeColor = self.defaultStrokeColor;
+    return _strokeColor;
 }
 
-- (CGFloat)cornerScaleFactor { return self.bounds.size.height / CARD_STANDARD_HEIGHT; }
-- (CGFloat)cornerRadius      { return CARD_STANDARD_CORNER_RADIUS * [self cornerScaleFactor]; }
+- (UIColor *)fillColor
+{
+    if (!_fillColor) _fillColor = self.defaultFillColor;
+    return _fillColor;
+}
+
+- (UIColor *)defaultStrokeColor
+{
+    return [UIColor blackColor];
+}
+
+- (UIColor *)defaultFillColor
+{
+    return [UIColor whiteColor];
+}
+
+- (CGFloat)cornerRadius
+{
+    return STANDARD_CARD_CORNER_RADIUS * self.bounds.size.width / STANDARD_CARD_WIDTH;
+}
 
 // The standard way to draw a card, with rounded corners.
 // Subclasses can override the drawing of contents.
 - (void)drawRect:(CGRect)rect
 {
-    UIBezierPath *roundedRect = [UIBezierPath bezierPathWithRoundedRect:self.bounds
-                                                           cornerRadius:[self cornerRadius]];
+    UIBezierPath *cardPath = [UIBezierPath bezierPathWithRoundedRect:self.bounds
+                                               cornerRadius:[self cornerRadius]];
     
-    [roundedRect addClip];
-    
-    [[UIColor whiteColor] setFill];
-    UIRectFill(self.bounds);
-    
-    [[UIColor blackColor] setStroke];
-    [roundedRect stroke];
+    [self.fillColor setFill];
+    [cardPath fill];
+
+    [self.strokeColor setStroke];
+    [cardPath stroke];
+
+    [cardPath addClip];
+    [self drawContents:rect];
+}
+
+- (void)drawContents:(CGRect)rect
+{
 }
 
 @end

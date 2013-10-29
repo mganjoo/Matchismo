@@ -16,5 +16,9 @@
 @property (nonatomic) SetCardColor color;
 @property (nonatomic) SetCardShading shading;
 @property (nonatomic) SetCardShape shape;
+@property (nonatomic) BOOL chosen;
+
+// Methods for animation
+- (void)toggleChosen;
 
 @end

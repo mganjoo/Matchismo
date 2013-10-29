@@ -24,12 +24,13 @@ typedef NS_ENUM (NSUInteger, ChoiceOutcome) {
               numberOfCardsInChoice:(NSUInteger)numberOfCardsInChoice;
 - (void)chooseCardAtIndex:(NSUInteger)index;
 - (Card *)cardAtIndex:(NSUInteger)index;
+- (int)addCardToPlayAndGetIndex;
 
+@property (nonatomic, readonly) NSUInteger numberOfCardsInPlay;
 @property (nonatomic, readonly) NSInteger score;
 
 // Properties associated with the last card choice
-@property (nonatomic, strong, readonly) NSArray *lastFaceUpCards;
+@property (nonatomic, strong, readonly) NSArray *lastFaceUpCardIndices;
 @property (nonatomic, readonly) ChoiceOutcome lastChoiceOutcome;
-@property (nonatomic, readonly) int lastScoreChange;
 
 @end

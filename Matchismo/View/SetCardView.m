@@ -10,6 +10,70 @@
 
 @implementation SetCardView
 
+// Note: some of these were defined in CardView.h, but
+// these are meant to be completley independent of those
+// values, since there are other constants that were calculated
+// specifically using these values within _this_ file.
+
+// "Standard" (by our book) card width and height
+// (See note about scaling below)
+#define STANDARD_CARD_WIDTH         120.0
+#define STANDARD_CARD_HEIGHT        180.0
+#define HMARGIN 10.0
+
+// These container sizes were hand-calculated
+// based on a standard card size of 120x180
+// (See note about scaling below)
+#define SHAPE_CONTAINER_WIDTH   100.0
+#define SHAPE_CONTAINER_HEIGHT   48.0
+#define SHAPE_HORIZONTAL_MARGIN  15.0
+#define SHAPE_VERTICAL_MARGIN    10.0
+
+// Vertical offsets for cards
+// Again, calculated based on standard card width and height
+#define ODD_LAYOUT_OFFSET_1    9.0
+#define ODD_LAYOUT_OFFSET_2   66.0
+#define ODD_LAYOUT_OFFSET_3  123.0
+#define EVEN_LAYOUT_OFFSET_1  37.5
+#define EVEN_LAYOUT_OFFSET_2  94.5
+
+// Squiggle drawing constants
+// All these constants are unscaled, defined with
+// respect to a default container size of w=100, h=48 (above)
+#define SQUIGGLE_XOFFSET             8.0
+#define SQUIGGLE_YOFFSET             4.0
+#define SQUIGGLE_BEZIER1_ANGLE_DEG  45.0
+#define SQUIGGLE_BEZIER2_ANGLE_DEG  45.0
+#define SQUIGGLE_BEZIER3_ANGLE_DEG  60.0
+#define SQUIGGLE_BEZIER1_LENGTH     20.0
+#define SQUIGGLE_BEZIER2_LENGTH     15.0
+#define SQUIGGLE_BEZIER3_LENGTH     10.0
+
+#define HIGHLIGHT_COLOR_R 0.98
+#define HIGHLIGHT_COLOR_G 0.93
+#define HIGHLIGHT_COLOR_B 0.33
+#define TOGGLE_TIME 0.4
+
+- (void)drawContents:(CGRect)rect
+{
+    switch (self.number) {
+        case 1:
+            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_2];
+            break;
+        case 2:
+            [self drawShapeInRect:rect atVertOffset:EVEN_LAYOUT_OFFSET_1];
+            [self drawShapeInRect:rect atVertOffset:EVEN_LAYOUT_OFFSET_2];
+            break;
+        case 3:
+            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_1];
+            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_2];
+            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_3];
+            break;
+        default:
+            return;
+    }
+}
+
 - (void)setShading:(SetCardShading)shading
 {
     _shading = shading;
@@ -34,61 +98,15 @@
     [self setNeedsDisplay];
 }
 
-// "Standard" (by our book) card width and height
-// (See note about scaling below)
-#define STANDARD_CARD_WIDTH  120.0
-#define STANDARD_CARD_HEIGHT 180.0
-#define HMARGIN 10.0
-
-// These container sizes were hand-calculated
-// based on a standard card size of 120x180
-// (See note about scaling below)
-#define SHAPE_CONTAINER_WIDTH   100.0
-#define SHAPE_CONTAINER_HEIGHT   48.0
-#define SHAPE_HORIZONTAL_MARGIN  25.0
-#define SHAPE_VERTICAL_MARGIN    15.0
-
-// Vertical offsets for cards
-// Again, calculated based on standard card width and height
-#define ODD_LAYOUT_OFFSET_1    9.0
-#define ODD_LAYOUT_OFFSET_2   66.0
-#define ODD_LAYOUT_OFFSET_3  123.0
-#define EVEN_LAYOUT_OFFSET_1  37.5
-#define EVEN_LAYOUT_OFFSET_2  94.5
-
-// Squiggle drawing constants
-// All these constants are unscaled, defined with
-// respect to a default container size of w=100, h=48 (above)
-#define SQUIGGLE_XOFFSET             8.0
-#define SQUIGGLE_YOFFSET             4.0
-#define SQUIGGLE_BEZIER1_ANGLE_DEG  45.0
-#define SQUIGGLE_BEZIER2_ANGLE_DEG  35.0
-#define SQUIGGLE_BEZIER3_ANGLE_DEG  60.0
-#define SQUIGGLE_BEZIER1_LENGTH     20.0
-#define SQUIGGLE_BEZIER2_LENGTH     15.0
-#define SQUIGGLE_BEZIER3_LENGTH     10.0
-
-- (void)drawRect:(CGRect)rect
+- (void)setChosen:(BOOL)chosen
 {
-    [super drawRect:rect];
-    
-    switch (self.number) {
-        case 1:
-            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_2];
-            break;
-        case 2:
-            [self drawShapeInRect:rect atVertOffset:EVEN_LAYOUT_OFFSET_1];
-            [self drawShapeInRect:rect atVertOffset:EVEN_LAYOUT_OFFSET_2];
-            break;
-        case 3:
-            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_1];
-            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_2];
-            [self drawShapeInRect:rect atVertOffset:ODD_LAYOUT_OFFSET_3];
-            break;
-        default:
-            return;
-    }
-
+    _chosen = chosen;
+    self.fillColor = (_chosen ? [UIColor colorWithRed:HIGHLIGHT_COLOR_R
+                                               green:HIGHLIGHT_COLOR_G
+                                                blue:HIGHLIGHT_COLOR_B
+                                               alpha:1.0]
+                      : [self defaultFillColor]);
+    [self setNeedsDisplay];
 }
 
 #pragma Mark - Shape drawing methods
@@ -111,7 +129,7 @@
 - (void)drawShapeInRect:(CGRect)rect atVertOffset:(CGFloat)vOffset
 {
     CGFloat scaleFactor = rect.size.width / STANDARD_CARD_WIDTH;
-    CGRect shapeContainer = CGRectMake(10 * scaleFactor, vOffset * scaleFactor,
+    CGRect shapeContainer = CGRectMake(HMARGIN * scaleFactor, vOffset * scaleFactor,
                                        SHAPE_CONTAINER_WIDTH * scaleFactor, SHAPE_CONTAINER_HEIGHT * scaleFactor);
     
     UIBezierPath *shape;
@@ -261,7 +279,7 @@ static inline CGFloat degreesToRadians(CGFloat degrees)
     [self popContext:context];
 }
 
-#define STRIPED_PATTERN_CELL_WIDTH  4
+#define STRIPED_PATTERN_CELL_WIDTH  2
 #define STRIPED_PATTERN_CELL_HEIGHT 1
 
 - (void)shadeShapeWithStripedShading:(UIBezierPath *)shape
@@ -353,6 +371,17 @@ void drawStripedPattern(void *info, CGContextRef context, UIColor *color)
     CGContextSetFillColorWithColor(context, color.CGColor);
     CGContextFillRect(context, CGRectMake(STRIPED_PATTERN_CELL_WIDTH / 2, 0,
                                           STRIPED_PATTERN_CELL_WIDTH / 2, STRIPED_PATTERN_CELL_HEIGHT));
+}
+
+- (void)toggleChosen
+{
+    [UIView transitionWithView:self
+                      duration:TOGGLE_TIME
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                        self.chosen = !self.chosen;
+                    }
+                    completion:nil];
 }
 
 @end

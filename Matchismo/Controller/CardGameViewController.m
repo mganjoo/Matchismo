@@ -1,4 +1,4 @@
-//
+ //
 //  CardGameViewController.m
 //  Matchismo
 //
@@ -7,36 +7,28 @@
 //
 
 #import "CardGameViewController.h"
-#import "CardMatchingGame.h"
+#import "Grid.h"
 
 @interface CardGameViewController ()
 
 @property (strong, nonatomic) CardMatchingGame *game;
-@property (strong, nonatomic) NSAttributedString *lastOutcome;
-@property (strong, nonatomic) NSMutableArray *previousOutcomes; // of NSAttributedString
+@property (strong, nonatomic) NSMutableArray *cardViews; // of CardView
+@property (strong, nonatomic) Grid *grid;
 
 // UI elements
-@property (strong, nonatomic) IBOutletCollection(UIButton) NSArray *cardButtons;
 @property (weak, nonatomic) IBOutlet UILabel *scoreLabel;
-@property (weak, nonatomic) IBOutlet UILabel *lastChoiceOutcomeLabel;
+@property (weak, nonatomic) IBOutlet UIView *cardsPlaceholderView;
 
 @end
 
+#define DEFAULT_NUMBER_OF_CARDS_IN_CHOICE 2
+#define DEFAULT_NUMBER_OF_CARDS_IN_PLAY  10
+
 @implementation CardGameViewController
 
-- (void)viewWillAppear:(BOOL)animated
+- (void)viewDidLayoutSubviews
 {
     [self updateUI];
-}
-
-- (CardMatchingGame *)game
-{
-    if (!_game) {
-        _game = [[CardMatchingGame alloc] initWithCardCount:[[self cardButtons] count]
-                                                  usingDeck:[self createDeck]
-                                      numberOfCardsInChoice:[self numberOfCardsInChoice]];
-    }
-    return _game;
 }
 
 // Abstract method (must be overridden)
@@ -45,114 +37,236 @@
     return nil;
 }
 
-// Default implementation (could be overridden)
-- (NSString *)faceUpBackgroundImageNameForCard:(Card *)card
+// Abstract method (must be overridden)
+- (CardView *)createViewForCard:(Card *)card
 {
-    return @"CardFront";
+    return nil;
 }
 
-// Default implementation (could be overridden)
-- (NSString *)faceDownBackgroundImageNameForCard:(Card *)card
+// Abstract method (must be overridden)
+- (void)updateTappedCardView:(CardView *)cardView forOutcome:(ChoiceOutcome)outcome
 {
-    return @"CardBack";
+}
+
+// Abstract method (must be overridden)
+- (void)updateOpenCardView:(CardView *)cardView forOutcome:(ChoiceOutcome)outcome
+{
+}
+
+- (void)handleCardTouch:(UITapGestureRecognizer *)gestureRecognizer
+{
+    CardView *cardView = (CardView *)gestureRecognizer.view;
+    int i = [self.cardViews indexOfObject:cardView];
+    
+    // Perform selection of card
+    [self.game chooseCardAtIndex:i];
+    
+    // Perform any visual updates if necessary
+    [self updateTappedCardView:cardView forOutcome:self.game.lastChoiceOutcome];
+
+    // If it was a match or mismatch, we also want to update the others
+    if (self.game.lastChoiceOutcome != NoOutcome) {
+        for (NSNumber *index in [self.game lastFaceUpCardIndices]) {
+            CardView *otherCardView = self.cardViews[[index integerValue]];
+            
+            if (otherCardView != cardView)
+                [self updateOpenCardView:otherCardView forOutcome:self.game.lastChoiceOutcome];
+
+            // Disable tap gestures if matched
+            if (self.game.lastChoiceOutcome == MatchOutcome)
+                for (UIGestureRecognizer *recognizer in cardView.gestureRecognizers)
+                    if ([recognizer isKindOfClass:[UITapGestureRecognizer class]])
+                        recognizer.enabled = NO;
+        }
+    }
+    
+    [self updateUI];
+}
+
+// Default implementation assumes 10 cards (could be overridden)
+- (NSUInteger)numberOfInitialCardsInPlay
+{
+    return DEFAULT_NUMBER_OF_CARDS_IN_PLAY;
 }
 
 // We use a 2-card game by default (could be overridden)
 - (NSUInteger)numberOfCardsInChoice
 {
-    return 2;
-}
-
-// Default implementation simply prints card contents (could be overridden)
-- (NSAttributedString *)faceUpTitleForCard:(Card *)card
-{
-    return [[NSAttributedString alloc] initWithString: card.contents];
-}
-
-// Default implementation simply prints nothing (could be overridden)
-- (NSAttributedString *)faceDownTitleForCard:(Card *)card
-{
-    return [[NSAttributedString alloc] initWithString: @""];
-}
-
-- (NSAttributedString *)titleForCard:(Card *)card
-{
-    return card.isChosen ? [self faceUpTitleForCard:card] : [self faceDownTitleForCard:card];
-}
-
-- (UIImage *)backgroundImageForCard:(Card *)card
-{
-    return [UIImage imageNamed:card.isChosen ? [self faceUpBackgroundImageNameForCard:card] : [self faceDownBackgroundImageNameForCard:card]];
-}
-
-- (IBAction)touchCardButton:(UIButton *)sender {
-    int chosenButtonIndex = [self.cardButtons indexOfObject:sender];
-    [self.game chooseCardAtIndex:chosenButtonIndex];
-    [self saveLastOutcome];
-    [self updateUI];
+    return DEFAULT_NUMBER_OF_CARDS_IN_CHOICE;
 }
 
 - (IBAction)touchRedealButton:(UIButton *)sender {
-    self.game = nil;
-    self.previousOutcomes = nil;
+    [self redeal];
+}
+
+- (void)redeal {
+    // Schedule all cards (old and new; doesn't matter) for removal
+    for (CardView *cardView in self.cardViews)
+        cardView.needsRemoval = YES;
     [self updateUI];
 }
 
+// Animation options
+#define CARD_ARRIVAL_DURATION       1.0
+#define CARD_REMOVAL_DURATION       1.0
+#define CARD_ARRIVAL_SPRING_DAMPING 0.6
+#define NEW_CARD_ARRIVAL_DELAY_START     0.3
+#define NEW_CARD_ARRIVAL_DELAY_BASE_STEP 0.1
+#define NEW_CARD_ARRIVAL_DELAY_STEP      0.03
+
 - (void)updateUI
 {
-    for (UIButton *cardButton in self.cardButtons) {
-        int cardButtonIndex = [self.cardButtons indexOfObject:cardButton];
-        Card *card = [self.game cardAtIndex:cardButtonIndex];
-        [cardButton setAttributedTitle:[self titleForCard:card] forState:UIControlStateNormal];
-        [cardButton setBackgroundImage:[self backgroundImageForCard:card] forState:UIControlStateNormal];
-        cardButton.enabled = !card.isMatched;
-        self.scoreLabel.text = [NSString stringWithFormat:@"Score: %d", self.game.score];
+    // We only collect the cards we are showing
+    NSMutableArray *cardsToShow = [[NSMutableArray alloc] init];
+    NSMutableArray *cardsToRemove = [[NSMutableArray alloc] init];
+    for (UIView *view in [self.cardsPlaceholderView subviews]) {
+        if ([view isKindOfClass:[CardView class]]) {
+            CardView *cardView = (CardView *)view;
+            if ([cardView needsRemoval]) {
+                [cardsToRemove addObject:cardView];
+            } else {
+                [cardsToShow addObject:cardView];
+            }
+        }
     }
     
-    self.lastChoiceOutcomeLabel.attributedText = self.lastOutcome;
-    self.lastChoiceOutcomeLabel.alpha = 1;
+    // Animation delays
+    // We want the baseDelay to exist only if there are NO existing cards, i.e.
+    // new ones will be created
+    float baseDelay = [cardsToShow count] > 0 ? 0 : NEW_CARD_ARRIVAL_DELAY_START;
+    float currentBaseDelay = baseDelay;
+    float currentDelay;
+
+    
+    if ([cardsToRemove count] > 0)
+        [self animateAndRemoveCards:cardsToRemove];
+    
+    if ([cardsToShow count] == 0) {
+        // There are no cards to show, i.e. we must reset game and cardViews
+        self.cardViews = nil;
+        self.game = nil;
+        
+        // No cards to show: add new ones
+        for (int i = 0; i < [self numberOfInitialCardsInPlay]; i++) {
+            [self createAndAddCardView:[self.game cardAtIndex:i]];
+        }
+        cardsToShow = self.cardViews;
+    }
+
+    // Update grid with current parameters
+    self.grid.cellAspectRatio = CARD_ASPECT_RATIO;
+    self.grid.size = self.cardsPlaceholderView.bounds.size;
+    self.grid.minimumNumberOfCells = [cardsToShow count];
+    
+    // Draw cards
+    int row = 0, col = 0;
+    for (CardView *cardView in cardsToShow) {
+        if (cardView.center.y < self.cardsPlaceholderView.bounds.origin.y) {
+            // If card is new (i.e. out of bounds) add a slight delay effect to simulate "dealing"
+            currentDelay = currentBaseDelay;
+            currentBaseDelay += NEW_CARD_ARRIVAL_DELAY_STEP;
+        } else {
+            currentDelay = 0;
+        }
+        // Animate arrival
+        [UIView animateWithDuration:CARD_ARRIVAL_DURATION
+                              delay:currentDelay
+             usingSpringWithDamping:CARD_ARRIVAL_SPRING_DAMPING
+              initialSpringVelocity:0
+                            options:0
+                         animations:^{
+                             cardView.center = [self.grid centerOfCellAtRow:row inColumn:col];
+                             cardView.frame = [self.grid frameOfCellAtRow:row inColumn:col];
+                         }
+                         completion:nil];
+        [cardView setNeedsDisplay];
+
+        col++;
+        if (col >= [self.grid columnCount]) {
+            col = 0;
+            row++;
+            if (currentBaseDelay >= baseDelay + NEW_CARD_ARRIVAL_DELAY_STEP) {
+                baseDelay += NEW_CARD_ARRIVAL_DELAY_BASE_STEP;
+                currentBaseDelay = baseDelay;
+            }
+        }
+    }
+    
+    self.scoreLabel.text = [NSString stringWithFormat:@"Score: %d", self.game.score];
 }
 
-- (NSMutableArray *)previousOutcomes
+- (CardMatchingGame *)game
 {
-    if (!_previousOutcomes) _previousOutcomes = [[NSMutableArray alloc] init];
-    return _previousOutcomes;
+    if (!_game) {
+        _game = [[CardMatchingGame alloc] initWithCardCount:[self numberOfInitialCardsInPlay]
+                                                  usingDeck:[self createDeck]
+                                      numberOfCardsInChoice:[self numberOfCardsInChoice]];
+    }
+    return _game;
 }
 
-- (void)saveLastOutcome
+- (NSMutableArray *)cardViews
 {
-    // Generate string for outcome, with placeholder for card titles
-    NSString *outcomeString;
-    if (self.game.lastChoiceOutcome == NoOutcome) {
-        outcomeString = @"[CARDS]";
-    } else if (self.game.lastChoiceOutcome == MatchOutcome) {
-        outcomeString = [NSString stringWithFormat:@"Matched [CARDS] for %d points.", self.game.lastScoreChange];
-    } else if (self.game.lastChoiceOutcome == MismatchOutcome) {
-        outcomeString = [NSString stringWithFormat:@"[CARDS] don't match! %d point penalty.", self.game.lastScoreChange];
+    if (!_cardViews) _cardViews = [[NSMutableArray alloc] init];
+    return _cardViews;
+}
+
+- (Grid *)grid
+{
+    if (!_grid) _grid = [[Grid alloc] init];
+    return _grid;
+}
+
+// Add cards to play and return number of cards successfully added
+- (int)addCardsToPlay:(NSUInteger)numToAdd
+{
+    int i;
+    for (i = 0; i < numToAdd; i++) {
+        int index = [self.game addCardToPlayAndGetIndex];
+        if (index < 0) break;
+        [self createAndAddCardView:[self.game cardAtIndex:index]];
     }
-    NSMutableAttributedString *outcomeAttributedString = [[NSMutableAttributedString alloc] initWithString:outcomeString];
+    if (i > 0) [self updateUI];
+    return i;
+}
+
+#pragma Mark - Creating, removing and animating cards
+
+#define NEW_CARD_VIEW_OFFSET_FRACTION 0.3
+
+// Add cards to superview, and set up for animation
+- (void)createAndAddCardView:(Card *)card
+{
+    CardView *cardView = [self createViewForCard:card];
+    [self.cardViews addObject:cardView];
+    [self.cardsPlaceholderView addSubview:cardView];
+    UIGestureRecognizer *recognizer = [[UITapGestureRecognizer alloc]
+                                       initWithTarget:self
+                                       action:@selector(handleCardTouch:)];
+    [cardView addGestureRecognizer:recognizer];
     
-    // Generate attributed string of card titles
-    NSMutableAttributedString *cardsAttributedString = [[NSMutableAttributedString alloc] init];
-    for (Card *card in self.game.lastFaceUpCards) {
-        [cardsAttributedString appendAttributedString:[self faceUpTitleForCard:card]];
-        if ([self.game.lastFaceUpCards indexOfObject:card] != [self.game.lastFaceUpCards count] - 1)
-            [cardsAttributedString appendAttributedString:[[NSAttributedString alloc] initWithString:@" "]];
-    }
-    
-    // Replace placeholder in outcome string
-    NSRange cardsRange = [outcomeString rangeOfString:@"[CARDS]"];
-    [outcomeAttributedString replaceCharactersInRange:cardsRange withAttributedString:cardsAttributedString];
-    UIFontDescriptor *bodyDescriptor = [UIFontDescriptor
-                                        preferredFontDescriptorWithTextStyle:UIFontTextStyleBody];
-    [outcomeAttributedString addAttribute:NSFontAttributeName
-                                    value:[UIFont fontWithDescriptor:bodyDescriptor size:13]
-                                    range:NSMakeRange(0, [outcomeAttributedString.string length])];
-    
-    self.lastOutcome = outcomeAttributedString;
-    // If the outcome is either a match or a mismatch, store it in previousOutcomes
-    if (self.game.lastChoiceOutcome == MatchOutcome || self.game.lastChoiceOutcome == MismatchOutcome)
-        [self.previousOutcomes addObject:outcomeAttributedString];
+    // Start at top right (outside view)
+    cardView.center = CGPointMake(self.cardsPlaceholderView.bounds.origin.x
+                                  + self.cardsPlaceholderView.bounds.size.width * (1 + NEW_CARD_VIEW_OFFSET_FRACTION),
+                                  self.cardsPlaceholderView.bounds.origin.y
+                                  - self.cardsPlaceholderView.bounds.size.height * NEW_CARD_VIEW_OFFSET_FRACTION);
+}
+
+- (void)animateAndRemoveCards:(NSArray *)cardsToRemove
+{
+    [UIView animateWithDuration:CARD_REMOVAL_DURATION
+                     animations:^{
+                        for (CardView *cardView in cardsToRemove) {
+                            // Move card to random x coordinate below screen
+                            int x = ((arc4random() % (int)(self.cardsPlaceholderView.bounds.size.width * 4))
+                                     - (int)self.cardsPlaceholderView.bounds.size.width * 2);
+                            cardView.center = CGPointMake(x, 2 * self.cardsPlaceholderView.bounds.size.height);
+                        }
+                     }
+                     completion:^(BOOL finished) {
+                         [cardsToRemove makeObjectsPerformSelector:@selector(removeFromSuperview)];
+                     }
+     ];
 }
 
 @end

@@ -8,12 +8,22 @@
 
 #import <UIKit/UIKit.h>
 
+extern const float CARD_ASPECT_RATIO;
+
 @interface CardView : UIView
 
-// Scaling factor for the card's rounded corner
-- (CGFloat)cornerScaleFactor;
+@property (strong, nonatomic) UIColor *strokeColor;
+@property (strong, nonatomic) UIColor *fillColor;
+@property (strong, nonatomic, readonly) UIColor *defaultStrokeColor;
+@property (strong, nonatomic, readonly) UIColor *defaultFillColor;
 
 // Scaled value of the corner radius
-- (CGFloat)cornerRadius;
+@property (nonatomic, readonly) CGFloat cornerRadius;
+
+// Does the card need to be removed from play in the next UI update?
+@property (nonatomic) BOOL needsRemoval;
+
+// Subclasses can override this to change contents
+- (void)drawContents:(CGRect)rect;
 
 @end

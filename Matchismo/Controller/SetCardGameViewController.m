@@ -8,9 +8,14 @@
 
 #import "SetCardGameViewController.h"
 #import "SetCard.h"
+#import "SetCardView.h"
 #import "SetCardDeck.h"
 
+#define SET_CARDS_ADD_BATCH_SIZE 3
+
 @interface SetCardGameViewController ()
+
+@property (weak, nonatomic) IBOutlet UIButton *moreCardsButton;
 
 @end
 
@@ -27,101 +32,49 @@
     return 3;
 }
 
-- (NSAttributedString *)faceUpTitleForCard:(Card *)card
+- (NSUInteger)numberOfInitialCardsInPlay
 {
-    if ([card isKindOfClass:[SetCard class]]) {
-        SetCard *setCard = (SetCard *)card;
-        
-        NSString *shape;
-        switch (setCard.shape) {
-            case SquiggleShape:
-                shape = @"▲";
-                break;
-            case OvalShape:
-                shape = @"●";
-                break;
-            case DiamondShape:
-                shape = @"■";
-                break;
-            default:
-                return nil; // should never happen
-        }
-        
-        if (!(1 <= setCard.number && setCard.number <= NUMBER_OF_SET_FEATURES_PER_TYPE))
-            return nil; // should never happen
-        
-        // Note for graders: I am currently printing out a number and a shape
-        // I could just have easily drawn the requisite number of copies of the shape
-        // instead, but was having trouble fitting them on the card face. Maybe
-        // I can reattempt it when we do custom shape drawing.
-        NSString *title = [NSString stringWithFormat:@"%d%@", setCard.number, shape];
-        NSMutableAttributedString *attributedTitle = [[NSMutableAttributedString alloc]
-                                                      initWithString:title];
-        NSRange shapeRange = NSMakeRange(1, 1);
-        
-        CGFloat red, green, blue;
-        // These color values are custom (and made slightly easier on the eye)
-        switch (setCard.color) {
-            case PurpleColor:
-                red = 0.5;
-                green = 0.0;
-                blue = 0.5;
-                break;
-            case RedColor:
-                red = 1.0;
-                green = 0.0;
-                blue = 0.0;
-                break;
-            case GreenColor:
-                red = 0.25;
-                green = 0.65;
-                blue = 0.35;
-                break;
-            default:
-                return nil; // should never happen
-        }
-        
-        CGFloat alpha;
-        switch (setCard.shading) {
-            case SolidShading:
-                alpha = 1.0;
-                break;
-            case StripedShading:
-                alpha = 0.25;
-                break;
-            case OpenShading:
-                alpha = 0.0;
-                break;
-            default:
-                return nil; // should never happen
-        }
-        
-        UIColor *strokeColor = [UIColor colorWithRed:red green:green blue:blue alpha:1.0];
-        UIColor *fillColor = [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
-        NSDictionary *colorAttributes = @{NSStrokeColorAttributeName : strokeColor,
-                                          NSForegroundColorAttributeName : fillColor,
-                                          NSStrokeWidthAttributeName : @-5};
-        [attributedTitle addAttributes:colorAttributes range:shapeRange];
+    return 12;
+}
 
-        return attributedTitle;
+- (CardView *)createViewForCard:(Card *)card
+{
+    SetCard *sCard = (SetCard *)card;
+    SetCardView *sCardView = [[SetCardView alloc] init];
+    if (sCardView) {
+        sCardView.color = sCard.color;
+        sCardView.number = sCard.number;
+        sCardView.shading = sCard.shading;
+        sCardView.shape = sCard.shape;
     }
-    return nil;
+    return sCardView;
 }
 
-- (NSAttributedString *)faceDownTitleForCard:(Card *)card
+- (void)updateTappedCardView:(CardView *)cardView forOutcome:(ChoiceOutcome)outcome
 {
-    // same as face up
-    return [self faceUpTitleForCard:card];
+    SetCardView *setCardView = (SetCardView *)cardView;
+    [setCardView toggleChosen];
+    if (outcome == MatchOutcome) setCardView.needsRemoval = YES;
 }
 
-- (NSString *)faceUpBackgroundImageNameForCard:(Card *)card
+- (void)updateOpenCardView:(CardView *)cardView forOutcome:(ChoiceOutcome)outcome
 {
-    return @"SelectedCardFront";
+    SetCardView *setCardView = (SetCardView *)cardView;
+    if (outcome == MatchOutcome)
+        setCardView.needsRemoval = YES;
+    else if (outcome == MismatchOutcome)
+        [setCardView toggleChosen];
 }
 
-- (NSString *)faceDownBackgroundImageNameForCard:(Card *)card
+- (IBAction)touchMoreCardsButton:(UIButton *)sender {
+    int numAdded = [super addCardsToPlay:SET_CARDS_ADD_BATCH_SIZE];
+    if (numAdded < SET_CARDS_ADD_BATCH_SIZE) sender.enabled = NO;
+}
+
+- (void)redeal
 {
-    return @"UnselectedCardFront";
+    [super redeal];
+    self.moreCardsButton.enabled = YES;
 }
 
 @end
